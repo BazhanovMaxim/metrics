@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"github.com/BazhanovMaxim/metrics/internal/server/storage"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -14,26 +16,45 @@ func TestHandler_HomePageHandler(t *testing.T) {
 		contentType string
 	}
 	tests := []struct {
-		name string
-		want want
+		name         string
+		method       string
+		relativePath string
+		targetPath   string
+		want         want
 	}{
 		{
-			name: "positive test #1",
+			name:         "Positive Get Home Page",
+			method:       "GET",
+			relativePath: "/",
+			targetPath:   "/",
 			want: want{
-				code: http.StatusBadRequest,
+				code: http.StatusOK,
+				response: "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    " +
+					"<meta charset=\"UTF-8\">\n    " +
+					"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    " +
+					"<title>Metrics Page</title>\n" +
+					"</head>\n" +
+					"<body>\n" +
+					"<ul>\n    \n" +
+					"</ul>\n" +
+					"</body>\n" +
+					"</html>",
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, "/", nil)
-			recorder := httptest.NewRecorder()
-			NewHandler(nil).HomePageHandler(recorder, request)
+			router := gin.Default()
+			router.LoadHTMLGlob("../templates/*")
+			router.Handle(test.method, test.relativePath, NewHandler(storage.NewMetricRepository()).HomePageHandler)
 
-			res := recorder.Result()
-			// проверяем код ответа
-			res.Body.Close()
-			assert.Equal(t, test.want.code, res.StatusCode)
+			request := httptest.NewRequest(test.method, test.targetPath, nil)
+			recorder := httptest.NewRecorder()
+
+			router.ServeHTTP(recorder, request)
+
+			assert.Equal(t, test.want.code, recorder.Code)
+			assert.Contains(t, test.want.response, recorder.Body.String())
 		})
 	}
 }

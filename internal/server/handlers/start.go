@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
@@ -14,10 +15,14 @@ func NewHandler(storage storage.IMetricStorage) *Handler {
 }
 
 func (h *Handler) Start() error {
-	mux := http.NewServeMux()
+	router := gin.Default()
 
-	mux.HandleFunc("/", h.HomePageHandler)
-	mux.HandleFunc("/update/", h.UpdateHandler)
+	// Загрузка шаблонов
+	router.LoadHTMLGlob("internal/server/templates/*")
 
-	return http.ListenAndServe(":8080", mux)
+	router.GET("/", h.HomePageHandler)
+	router.GET("/value/:metricType/:metricTitle", h.GetMetric)
+	router.POST("/update/:metricType/:metricTitle/:metricValue", h.UpdateHandler)
+
+	return http.ListenAndServe(":8080", router)
 }

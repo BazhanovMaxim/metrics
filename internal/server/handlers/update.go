@@ -1,34 +1,27 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/BazhanovMaxim/metrics/internal/server/service"
+	"github.com/gin-gonic/gin"
 	"net/http"
-	"strings"
 )
 
-func (h *Handler) UpdateHandler(response http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodPost {
-		// разрешаем только POST-запросы
-		response.WriteHeader(http.StatusMethodNotAllowed)
+func (h *Handler) UpdateHandler(context *gin.Context) {
+	if context.Request.Method != "POST" {
+		context.Status(http.StatusMethodNotAllowed)
 		return
 	}
-
-	pathParts := strings.Split(request.URL.Path, "/")
-	if len(pathParts) != 5 {
-		response.WriteHeader(http.StatusNotFound)
-		return
-	}
-	metricType := pathParts[2]
-	metric, ok := service.GetMetricService().FindService(metricType)
+	metricType := context.Param("metricType")
+	metricTitle := context.Param("metricTitle")
+	metricValue := context.Param("metricValue")
+	metric, ok := service.NewMetricService().FindService(metricType)
 	if !ok {
-		response.WriteHeader(http.StatusBadRequest)
+		context.Status(http.StatusBadRequest)
 		return
 	}
-	if err := metric(pathParts, h.storage) != nil; err {
-		response.WriteHeader(http.StatusBadRequest)
+	if err := metric(metricTitle, metricValue, h.storage) != nil; err {
+		context.Status(http.StatusBadRequest)
 		return
 	}
-	fmt.Println(request.URL)
-	response.WriteHeader(http.StatusOK)
+	context.Status(http.StatusOK)
 }
