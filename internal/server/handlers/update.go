@@ -1,6 +1,7 @@
-package handler
+package handlers
 
 import (
+	"fmt"
 	"github.com/BazhanovMaxim/metrics/internal/server/service"
 	"net/http"
 	"strings"
@@ -28,5 +29,6 @@ func (h *Handler) UpdateHandler(response http.ResponseWriter, request *http.Requ
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	fmt.Println(request.URL)
 	response.WriteHeader(http.StatusOK)
 }

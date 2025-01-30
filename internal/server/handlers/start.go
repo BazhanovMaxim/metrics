@@ -1,16 +1,16 @@
-package handler
+package handlers
 
 import (
-	"github.com/BazhanovMaxim/metrics/internal/server/repository"
+	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 	"net/http"
 )
 
 type Handler struct {
-	storage repository.MetricStorage
+	storage storage.IMetricStorage
 }
 
-func NewHandler(storage *repository.MetricStorage) *Handler {
-	return &Handler{storage: *storage}
+func NewHandler(storage storage.IMetricStorage) *Handler {
+	return &Handler{storage: storage}
 }
 
 func (h *Handler) Start() error {

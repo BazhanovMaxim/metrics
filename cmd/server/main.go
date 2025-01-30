@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/BazhanovMaxim/metrics/internal/server/handler"
-	"github.com/BazhanovMaxim/metrics/internal/server/repository"
+	"github.com/BazhanovMaxim/metrics/internal/server/handlers"
+	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 )
 
 func main() {
-	err := handler.NewHandler(repository.NewMetricRepository()).Start()
+	err := handlers.NewHandler(storage.NewMetricRepository()).Start()
 	if err != nil {
 		panic(err)
 	}
