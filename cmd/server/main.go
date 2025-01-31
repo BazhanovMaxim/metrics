@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/BazhanovMaxim/metrics/internal/server/flags"
+	"github.com/BazhanovMaxim/metrics/internal/server/configs"
 	"github.com/BazhanovMaxim/metrics/internal/server/handlers"
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 	"log"
 )
 
 func main() {
-	flags.ParseFlags()
-	err := handlers.NewHandler(storage.NewMetricRepository()).Start()
-	if err != nil {
+	if err := configs.ParseServerConfigs(); err != nil {
+		log.Fatal(err)
+	}
+	if err := handlers.NewHandler(storage.NewMetricRepository()).Start(); err != nil {
 		log.Fatal(err)
 	}
 }

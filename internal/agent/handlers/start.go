@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/BazhanovMaxim/metrics/internal/agent/flags"
+	"github.com/BazhanovMaxim/metrics/internal/agent/configs"
 	"github.com/BazhanovMaxim/metrics/internal/agent/service"
 	"github.com/BazhanovMaxim/metrics/internal/agent/storage"
 	"time"
@@ -16,8 +16,8 @@ func NewHandler(storage *storage.MetricStorage) *Handler {
 }
 
 func (h *Handler) Start() error {
-	pollTicker := time.NewTicker(time.Duration(flags.PollInterval) * time.Second)
-	reportTicker := time.NewTicker(time.Duration(flags.ReportInterval) * time.Second)
+	pollTicker := time.NewTicker(time.Duration(configs.PollInterval) * time.Second)
+	reportTicker := time.NewTicker(time.Duration(configs.ReportInterval) * time.Second)
 	defer pollTicker.Stop()
 	defer reportTicker.Stop()
 

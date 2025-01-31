@@ -3,6 +3,7 @@ module github.com/BazhanovMaxim/metrics
 go 1.22.11
 
 require (
+	github.com/caarlos0/env/v6 v6.10.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/stretchr/testify v1.10.0
