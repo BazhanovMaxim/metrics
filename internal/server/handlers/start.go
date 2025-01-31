@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/BazhanovMaxim/metrics/internal/server/flags"
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -24,5 +25,5 @@ func (h *Handler) Start() error {
 	router.GET("/value/:metricType/:metricTitle", h.GetMetric)
 	router.POST("/update/:metricType/:metricTitle/:metricValue", h.UpdateHandler)
 
-	return http.ListenAndServe(":8080", router)
+	return http.ListenAndServe(flags.FlagRunAddr, router)
 }
