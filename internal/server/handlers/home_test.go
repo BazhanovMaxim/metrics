@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/BazhanovMaxim/metrics/internal/server/configs"
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -42,11 +43,12 @@ func TestHandler_HomePageHandler(t *testing.T) {
 			},
 		},
 	}
+	config, _ := configs.NewConfig()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()
 			router.LoadHTMLGlob("../templates/*")
-			router.Handle(test.method, test.relativePath, NewHandler(storage.NewMetricRepository()).HomePageHandler)
+			router.Handle(test.method, test.relativePath, NewHandler(config, *storage.NewMetricRepository()).HomePageHandler)
 
 			request := httptest.NewRequest(test.method, test.targetPath, nil)
 			recorder := httptest.NewRecorder()

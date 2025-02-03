@@ -15,8 +15,6 @@ func (h *Handler) HomePageHandler(context *gin.Context) {
 	for key, value := range service.NewMetricService().GetGauges(h.storage) {
 		items = append(items, model.IndexHTMLModel{Key: key, Value: value})
 	}
-	data := gin.H{
-		"Metrics": items,
-	}
+	data := gin.H{"Metrics": items}
 	context.HTML(http.StatusOK, "index.html", data)
 }

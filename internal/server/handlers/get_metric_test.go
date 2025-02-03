@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/BazhanovMaxim/metrics/internal/server/configs"
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -47,12 +48,13 @@ func TestHandler_GetMetric(t *testing.T) {
 		},
 	}
 	repository := storage.NewMetricRepository()
-	repository.UpdateGauge("test", 10)
-	repository.UpdateCounter("test", 10)
+	repository.Gauge.Update("test", 10)
+	repository.Counter.Update("test", 10)
+	config, _ := configs.NewConfig()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()
-			router.Handle(test.method, test.relativePath, NewHandler(repository).GetMetric)
+			router.Handle(test.method, test.relativePath, NewHandler(config, *repository).GetMetric)
 
 			request := httptest.NewRequest(test.method, test.targetPath, nil)
 			recorder := httptest.NewRecorder()

@@ -16,11 +16,11 @@ func TestParseFlags(t *testing.T) {
 	// сбрасываем флаги
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
-	ParseAgentConfigs()
+	agentConfig, _ := NewConfig()
 
-	assert.Equal(t, "127.0.0.1:8080", RunAddress)
-	assert.Equal(t, 15, ReportInterval)
-	assert.Equal(t, 5, PollInterval)
+	assert.Equal(t, "127.0.0.1:8080", agentConfig.RunAddress)
+	assert.Equal(t, 15, agentConfig.ReportInterval)
+	assert.Equal(t, 5, agentConfig.PollInterval)
 }
 
 func TestParseOsEnv(t *testing.T) {
@@ -28,9 +28,9 @@ func TestParseOsEnv(t *testing.T) {
 	os.Setenv("REPORT_INTERVAL", "1")
 	os.Setenv("POLL_INTERVAL", "1")
 
-	ParseAgentConfigs()
+	agentConfig, _ := NewConfig()
 
-	assert.Equal(t, "127.1.1.1:8080", RunAddress)
-	assert.Equal(t, 1, ReportInterval)
-	assert.Equal(t, 1, PollInterval)
+	assert.Equal(t, "127.1.1.1:8080", agentConfig.RunAddress)
+	assert.Equal(t, 1, agentConfig.ReportInterval)
+	assert.Equal(t, 1, agentConfig.PollInterval)
 }

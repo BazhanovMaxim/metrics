@@ -12,5 +12,5 @@ func GetMetricService() *MetricService {
 }
 
 func (ms *MetricService) UpdateMetric(storage *storage.MetricStorage) {
-	storage.UpdateMetrics()
+	storage.Update()
 }

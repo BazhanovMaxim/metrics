@@ -8,10 +8,11 @@ import (
 )
 
 func main() {
-	if err := configs.ParseServerConfigs(); err != nil {
+	config, err := configs.NewConfig()
+	if err != nil {
 		log.Fatal(err)
 	}
-	if err := handlers.NewHandler(storage.NewMetricRepository()).Start(); err != nil {
+	if err := handlers.NewHandler(config, *storage.NewMetricRepository()).Start(); err != nil {
 		log.Fatal(err)
 	}
 }

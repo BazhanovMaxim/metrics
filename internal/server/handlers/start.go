@@ -8,11 +8,12 @@ import (
 )
 
 type Handler struct {
-	storage storage.IMetricStorage
+	storage storage.MetricStorage
+	config  configs.Config
 }
 
-func NewHandler(storage storage.IMetricStorage) *Handler {
-	return &Handler{storage: storage}
+func NewHandler(config configs.Config, storage storage.MetricStorage) *Handler {
+	return &Handler{config: config, storage: storage}
 }
 
 func (h *Handler) Start() error {
@@ -25,5 +26,5 @@ func (h *Handler) Start() error {
 	router.GET("/value/:metricType/:metricTitle", h.GetMetric)
 	router.POST("/update/:metricType/:metricTitle/:metricValue", h.UpdateHandler)
 
-	return http.ListenAndServe(configs.FlagRunAddr, router)
+	return http.ListenAndServe(h.config.RunAddress, router)
 }

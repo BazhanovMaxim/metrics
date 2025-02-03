@@ -6,7 +6,11 @@ import (
 	"runtime"
 )
 
-// todo: непотокобезопасная
+type IMetricStorage interface {
+	GetMetrics() map[string]model.Metric
+	Update()
+}
+
 type MetricStorage struct {
 	storage map[string]model.Metric
 }
@@ -15,12 +19,12 @@ func (metrics *MetricStorage) GetMetrics() map[string]model.Metric {
 	return metrics.storage
 }
 
-func (metrics *MetricStorage) UpdateMetrics() {
+func (metrics *MetricStorage) Update() {
 	metrics.storage = generateMetrics(metrics.storage["PollCount"].Value.(int64) + 1)
 }
 
-func NewMetricRepository() *MetricStorage {
-	return &MetricStorage{generateMetrics(1)}
+func NewMetricRepository() MetricStorage {
+	return MetricStorage{generateMetrics(1)}
 }
 
 func generateMetrics(pollCount int64) map[string]model.Metric {

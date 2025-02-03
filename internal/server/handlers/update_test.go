@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/BazhanovMaxim/metrics/internal/server/configs"
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -68,10 +69,11 @@ func TestHandler_UpdateHandler(t *testing.T) {
 			want:       want{code: http.StatusNotFound},
 		},
 	}
+	config, _ := configs.NewConfig()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()
-			router.Handle(test.httpMethod, "/update/:metricType/:metricTitle/:metricValue", NewHandler(storage.NewMetricRepository()).UpdateHandler)
+			router.Handle(test.httpMethod, "/update/:metricType/:metricTitle/:metricValue", NewHandler(config, *storage.NewMetricRepository()).UpdateHandler)
 
 			request := httptest.NewRequest(test.httpMethod, test.target, nil)
 			recorder := httptest.NewRecorder()

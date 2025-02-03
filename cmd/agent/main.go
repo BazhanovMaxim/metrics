@@ -7,10 +7,11 @@ import (
 )
 
 func main() {
-	if err := configs.ParseAgentConfigs(); err != nil {
-		panic(err)
+	config, configError := configs.NewConfig()
+	if configError != nil {
+		panic(configError)
 	}
-	err := handlers.NewHandler(storage.NewMetricRepository()).Start()
+	err := handlers.NewHandler(config, storage.NewMetricRepository()).Start()
 	if err != nil {
 		panic(err)
 	}

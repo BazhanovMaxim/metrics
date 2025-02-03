@@ -17,7 +17,7 @@ func TestParseFlags(t *testing.T) {
 	// сбрасываем флаги
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
-	ParseServerConfigs()
+	config, _ := NewConfig()
 
-	assert.Equal(t, "127.0.0.1:8080", FlagRunAddr)
+	assert.Equal(t, "127.0.0.1:8080", config.RunAddress)
 }

@@ -1,57 +1,61 @@
 package storage
 
-// todo: непотокобезопасная
+type IMetricStorage[metricType float64 | int64] interface {
+	Update(key string, value metricType)
+	Get(key string) (metricType, bool)
+	GetAll() map[string]metricType
+}
+
 type MetricStorage struct {
-	Gauge   map[string]float64
-	Counter map[string]int64
+	Counter IMetricStorage[int64]
+	Gauge   IMetricStorage[float64]
 }
 
-func NewMetricRepository() IMetricStorage {
+func NewMetricRepository() *MetricStorage {
 	return &MetricStorage{
-		Gauge:   make(map[string]float64),
-		Counter: make(map[string]int64),
+		Counter: &CounterStorage{Data: make(map[string]int64)},
+		Gauge:   &GaugeStorage{Data: make(map[string]float64)},
 	}
 }
 
-type IMetricStorage interface {
-	UpdateGauge(key string, value float64)
-	UpdateCounter(key string, value int64)
-	GetGauge(key string) (float64, bool)
-	GetCounter(key string) (int64, bool)
-	GetGauges() map[string]float64
-	GetCounters() map[string]int64
+type CounterStorage struct {
+	Data map[string]int64
 }
 
-func (storage *MetricStorage) UpdateGauge(key string, value float64) {
-	storage.Gauge[key] = value
+type GaugeStorage struct {
+	Data map[string]float64
 }
 
-func (storage *MetricStorage) GetGauge(key string) (float64, bool) {
-	if val, find := storage.Gauge[key]; find {
-		return val, true
-	}
-	return 0.0, false
-}
-
-func (storage *MetricStorage) GetGauges() map[string]float64 {
-	return storage.Gauge
-}
-
-func (storage *MetricStorage) UpdateCounter(key string, value int64) {
-	if val, find := storage.Counter[key]; find {
-		storage.Counter[key] = val + value
+func (s *CounterStorage) Update(key string, value int64) {
+	if val, find := s.Data[key]; find {
+		s.Data[key] = val + value
 		return
 	}
-	storage.Counter[key] = value
+	s.Data[key] = value
 }
 
-func (storage *MetricStorage) GetCounter(key string) (int64, bool) {
-	if val, find := storage.Counter[key]; find {
-		return val, true
+func (s *CounterStorage) Get(key string) (int64, bool) {
+	if val, find := s.Data[key]; find {
+		return val, find
+	}
+	return 0, false
+}
+
+func (s *CounterStorage) GetAll() map[string]int64 {
+	return s.Data
+}
+
+func (s *GaugeStorage) Update(key string, value float64) {
+	s.Data[key] = value
+}
+
+func (s *GaugeStorage) Get(key string) (float64, bool) {
+	if val, find := s.Data[key]; find {
+		return val, find
 	}
 	return 0.0, false
 }
 
-func (storage *MetricStorage) GetCounters() map[string]int64 {
-	return storage.Counter
+func (s *GaugeStorage) GetAll() map[string]float64 {
+	return s.Data
 }
