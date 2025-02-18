@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/BazhanovMaxim/metrics/internal/server/configs"
+	"github.com/BazhanovMaxim/metrics/internal/server/logger"
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -21,6 +22,9 @@ func (h *Handler) Start() error {
 
 	// Загрузка шаблонов
 	router.LoadHTMLGlob("internal/server/templates/*")
+
+	// Регистрация middleware
+	router.Use(logger.RequestLoggerMiddleware(), logger.ResponseLoggerMiddleware())
 
 	router.GET("/", h.HomePageHandler)
 	router.GET("/value/:metricType/:metricTitle", h.GetMetric)
