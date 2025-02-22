@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"io"
 	"time"
 )
 
@@ -30,7 +31,7 @@ func NewLogger(level string) error {
 	return nil
 }
 
-// ResponseWriter — обертка для gin.ResponseWriter, которая позволяет захватывать тело ответа.
+// ResponseWriter — обертка для gin. ResponseWriter, которая позволяет захватывать тело ответа.
 type ResponseWriter struct {
 	gin.ResponseWriter
 	body *bytes.Buffer
@@ -44,14 +45,18 @@ func (w *ResponseWriter) Write(b []byte) (int, error) {
 func RequestLoggerMiddleware() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		start := time.Now() // точка, где выполняется хендлер
-		context.Next()      // обслуживание оригинального запроса
+
+		body, _ := io.ReadAll(context.Request.Body) // Сохраняем тело запроса
+		context.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+		context.Next() // обслуживание оригинального запроса
 
 		duration := time.Since(start) // время выполнения запроса
 
 		// отправляем сведения о запросе в zap
-		Log.Info("Http request: ",
+		Log.Info("Http Request: ",
 			zap.String("method", context.Request.Method),
 			zap.String("path", context.Request.URL.Path),
+			zap.ByteString("body", body), // Логируем тело запроса
 			zap.Duration("duration", duration),
 		)
 	}

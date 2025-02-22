@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func (h *Handler) HomePageHandler(context *gin.Context) {
+func (h *Handler) homePage(context *gin.Context) {
 	var items []model.IndexHTMLModel
 	for key, value := range service.NewMetricService().GetCounters(h.storage) {
 		items = append(items, model.IndexHTMLModel{Key: key, Value: value})

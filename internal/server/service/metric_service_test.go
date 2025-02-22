@@ -19,8 +19,12 @@ func TestMetricService_FindService(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, ok := metricService.FindService(test.metricType)
-			assert.Equal(t, test.expectedOk, ok, test.errorText)
+			service := metricService.FindService(test.metricType)
+			if test.expectedOk {
+				assert.NotNil(t, service)
+				return
+			}
+			assert.Nil(t, service)
 		})
 	}
 }

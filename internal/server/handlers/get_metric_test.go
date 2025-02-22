@@ -54,7 +54,7 @@ func TestHandler_GetMetric(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()
-			router.Handle(test.method, test.relativePath, NewHandler(config, *repository).GetMetric)
+			router.Handle(test.method, test.relativePath, NewHandler(config, *repository).getMetric)
 
 			request := httptest.NewRequest(test.method, test.targetPath, nil)
 			recorder := httptest.NewRecorder()

@@ -1,8 +1,7 @@
 package storage
 
 type IMetricStorage[metricType float64 | int64] interface {
-	Update(key string, value metricType)
-	Get(key string) (metricType, bool)
+	Update(key string, value metricType) metricType
 	GetAll() map[string]metricType
 }
 
@@ -26,34 +25,22 @@ type GaugeStorage struct {
 	Data map[string]float64
 }
 
-func (s *CounterStorage) Update(key string, value int64) {
+func (s *CounterStorage) Update(key string, value int64) int64 {
 	if val, find := s.Data[key]; find {
 		s.Data[key] = val + value
-		return
+		return s.Data[key]
 	}
 	s.Data[key] = value
-}
-
-func (s *CounterStorage) Get(key string) (int64, bool) {
-	if val, find := s.Data[key]; find {
-		return val, find
-	}
-	return 0, false
+	return value
 }
 
 func (s *CounterStorage) GetAll() map[string]int64 {
 	return s.Data
 }
 
-func (s *GaugeStorage) Update(key string, value float64) {
+func (s *GaugeStorage) Update(key string, value float64) float64 {
 	s.Data[key] = value
-}
-
-func (s *GaugeStorage) Get(key string) (float64, bool) {
-	if val, find := s.Data[key]; find {
-		return val, find
-	}
-	return 0.0, false
+	return value
 }
 
 func (s *GaugeStorage) GetAll() map[string]float64 {
