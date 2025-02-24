@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/BazhanovMaxim/metrics/internal/agent/compress"
 	"github.com/BazhanovMaxim/metrics/internal/agent/configs"
 	"github.com/BazhanovMaxim/metrics/internal/agent/handlers"
 	"github.com/BazhanovMaxim/metrics/internal/agent/logger"
@@ -42,8 +43,8 @@ func (ms *MetricService) UpdateMetric() {
 }
 
 func (ms *MetricService) SendMetricsToServer() {
-	for name, metric := range ms.storage.GetMetrics() {
-		metricsPojo := model.Metrics{MType: string(metric.Type), ID: name}
+	for id, metric := range ms.storage.GetMetrics() {
+		metricsPojo := model.Metrics{MType: string(metric.Type), ID: id}
 		switch v := metric.Value.(type) {
 		case float64:
 			metricsPojo.Value = &v
@@ -56,6 +57,11 @@ func (ms *MetricService) SendMetricsToServer() {
 			logger.Log.Error("Failed to marshal POJO", zap.Error(marshErr))
 			return
 		}
-		ms.handlers.SendMetrics(marshPojo)
+		buf, compressErr := compress.GzipCompress(marshPojo)
+		if compressErr != nil {
+			logger.Log.Error("Failed to compress data", zap.Error(compressErr))
+			return
+		}
+		ms.handlers.SendMetrics(ms.config, buf.Bytes())
 	}
 }

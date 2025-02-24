@@ -22,5 +22,5 @@ func main() {
 	}
 
 	logger.Log.Info("Running agent", zap.String("address", config.RunAddress))
-	service.NewMetricService(config, storage.NewMetricRepository(), *handlers.NewHandler(config, client)).Start()
+	service.NewMetricService(config, storage.NewMetricRepository(), *handlers.NewHandler(client)).Start()
 }

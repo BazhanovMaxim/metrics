@@ -2,9 +2,11 @@ package logger
 
 import (
 	"bytes"
+	"github.com/BazhanovMaxim/metrics/internal/server/compress"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"io"
+	"strings"
 	"time"
 )
 
@@ -44,19 +46,27 @@ func (w *ResponseWriter) Write(b []byte) (int, error) {
 
 func RequestLoggerMiddleware() gin.HandlerFunc {
 	return func(context *gin.Context) {
-		start := time.Now() // точка, где выполняется хендлер
+		// точка, где выполняется хендлер
+		start := time.Now()
 
-		body, _ := io.ReadAll(context.Request.Body) // Сохраняем тело запроса
+		// Сохраняем тело запроса
+		var body []byte
+		if strings.Contains(context.Request.Header.Get("Content-Encoding"), "gzip") {
+			body = compress.DecompressBody(context)
+		} else {
+			body, _ = io.ReadAll(context.Request.Body)
+		}
 		context.Request.Body = io.NopCloser(bytes.NewBuffer(body))
-		context.Next() // обслуживание оригинального запроса
 
-		duration := time.Since(start) // время выполнения запроса
+		// обслуживание оригинального запроса
+		context.Next()
 
-		// отправляем сведения о запросе в zap
+		duration := time.Since(start)
+
 		Log.Info("Http Request: ",
 			zap.String("method", context.Request.Method),
 			zap.String("path", context.Request.URL.Path),
-			zap.ByteString("body", body), // Логируем тело запроса
+			zap.ByteString("body", body),
 			zap.Duration("duration", duration),
 		)
 	}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/BazhanovMaxim/metrics/internal/server/compress"
 	"github.com/BazhanovMaxim/metrics/internal/server/configs"
 	"github.com/BazhanovMaxim/metrics/internal/server/logger"
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
@@ -24,7 +25,12 @@ func (h *Handler) Start() error {
 	router.LoadHTMLGlob("internal/server/templates/*")
 
 	// Регистрация middleware
-	router.Use(logger.RequestLoggerMiddleware(), logger.ResponseLoggerMiddleware())
+	router.Use(
+		compress.GzipCompress(),
+		compress.GzipDecompress(),
+		logger.RequestLoggerMiddleware(),
+		logger.ResponseLoggerMiddleware(),
+	)
 
 	router.GET("/", h.homePage)
 	router.GET("/value/:metricType/:metricTitle", h.getMetric)
