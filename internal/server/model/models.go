@@ -14,6 +14,12 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // Gauge value
 }
 
+// StorageJSONMetrics struct for save metrics to file
+type StorageJSONMetrics struct {
+	Gauge   map[string]float64 `json:"gauge,omitempty"`   // Gauge metrics
+	Counter map[string]int64   `json:"counter,omitempty"` // Counter metrics
+}
+
 // MetricType constants
 type MetricType string
 

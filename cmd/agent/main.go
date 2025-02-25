@@ -1,13 +1,15 @@
 package main
 
 import (
+	"context"
 	"github.com/BazhanovMaxim/metrics/internal/agent/configs"
-	"github.com/BazhanovMaxim/metrics/internal/agent/handlers"
 	"github.com/BazhanovMaxim/metrics/internal/agent/logger"
+	"github.com/BazhanovMaxim/metrics/internal/agent/router"
 	"github.com/BazhanovMaxim/metrics/internal/agent/service"
 	"github.com/BazhanovMaxim/metrics/internal/agent/storage"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
+	"time"
 )
 
 func main() {
@@ -18,9 +20,20 @@ func main() {
 
 	config, configError := configs.NewConfig()
 	if configError != nil {
-		logger.Log.Error("Failed to build client", zap.Error(configError))
+		logger.Log.Error("Failed to build config client", zap.Error(configError))
 	}
 
 	logger.Log.Info("Running agent", zap.String("address", config.RunAddress))
-	service.NewMetricService(config, storage.NewMetricRepository(), *handlers.NewHandler(client)).Start()
+
+	// Контекст работы агента
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(config.AgentWorkingTime)*time.Second)
+	defer cancel()
+
+	go func() {
+		service.NewMetricService(config, storage.NewMetricRepository(), *router.NewRouter(client)).Start(ctx)
+	}()
+	// Ждём завершения контекста
+	<-ctx.Done()
+
+	logger.Log.Info("The agent has completed the work")
 }

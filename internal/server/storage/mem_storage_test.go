@@ -18,10 +18,10 @@ func TestMetricStorage_UpdateCounter(t *testing.T) {
 		{"Positive check update counter", "The value has not changed", "first", 99, 100},
 		{"Positive check update counter", "The value has not changed", "first", -50, 50},
 	}
-	storage := NewMetricRepository()
+	storage := NewMemStorage()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			storage.Counter.Update(test.key, test.counter)
+			storage.UpdateCounter(test.key, test.counter)
 			mapValues := readCounterData(storage)
 			assert.Equal(t, test.expectedSum, mapValues[test.key], test.error)
 		})
@@ -39,29 +39,27 @@ func TestMetricStorage_UpdateGauge(t *testing.T) {
 		{"Positive check update gauge", "The value has not changed", "first", 1, 1},
 		{"Positive check update gauge", "The value has not changed", "first", -50, -50},
 	}
-	storage := NewMetricRepository()
+	storage := NewMemStorage()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			storage.Gauge.Update(test.key, test.counter)
+			storage.UpdateGauge(test.key, test.counter)
 			mapValues := readGaugeData(storage)
 			assert.Equal(t, test.expected, mapValues[test.key], test.error)
 		})
 	}
 }
 
-func readCounterData(metricStorage *MetricStorage) map[string]int64 {
+func readCounterData(metricStorage IMemStorage) map[string]int64 {
 	return readField("Counter", metricStorage).Interface().(map[string]int64)
 }
 
-func readGaugeData(metricStorage *MetricStorage) map[string]float64 {
+func readGaugeData(metricStorage IMemStorage) map[string]float64 {
 	return readField("Gauge", metricStorage).Interface().(map[string]float64)
 }
 
-func readField(fieldName string, metricStorage *MetricStorage) reflect.Value {
+func readField(fieldName string, metricStorage IMemStorage) reflect.Value {
 	// Получаем значение поля Counter
 	field := reflect.ValueOf(metricStorage).Elem().FieldByName(fieldName)
 	// Получаем конкретное значение, на которое указывает интерфейс
-	storage := reflect.ValueOf(field.Interface()).Elem()
-	// Получаем поле Data
-	return storage.FieldByName("Data")
+	return reflect.ValueOf(field.Interface())
 }

@@ -7,15 +7,17 @@ import (
 )
 
 type Config struct {
-	RunAddress     string
-	ReportInterval int
-	PollInterval   int
+	RunAddress       string
+	ReportInterval   int
+	PollInterval     int
+	AgentWorkingTime int
 }
 
 type OsConfig struct {
-	RunAddr string `env:"ADDRESS"`
-	Report  int    `env:"REPORT_INTERVAL"`
-	Poll    int    `env:"POLL_INTERVAL"`
+	RunAddr   string `env:"ADDRESS"`
+	Report    int    `env:"REPORT_INTERVAL"`
+	Poll      int    `env:"POLL_INTERVAL"`
+	AgentTime int    `env:"AGENT_WORKING_TIME"`
 }
 
 func NewConfig() (Config, error) {
@@ -34,6 +36,7 @@ func parseAgentFlags(config *Config) {
 	flagSet.StringVar(&config.RunAddress, "a", "localhost:8080", "address and port to run agent")
 	flagSet.IntVar(&config.ReportInterval, "r", 10, "report interval")
 	flagSet.IntVar(&config.PollInterval, "p", 2, "poll interval")
+	flagSet.IntVar(&config.AgentWorkingTime, "t", 600, "agent's working time")
 	flagSet.Parse(os.Args[1:])
 }
 
@@ -50,6 +53,9 @@ func parseOsEnv(config *Config) error {
 	}
 	if cfg.Report != 0 {
 		config.ReportInterval = cfg.Report
+	}
+	if cfg.AgentTime != 0 {
+		config.AgentWorkingTime = cfg.AgentTime
 	}
 	return nil
 }

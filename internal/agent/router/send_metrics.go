@@ -1,4 +1,4 @@
-package handlers
+package router
 
 import (
 	"fmt"
@@ -6,15 +6,15 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type Handler struct {
+type Router struct {
 	client *resty.Client
 }
 
-func NewHandler(client *resty.Client) *Handler {
-	return &Handler{client: client}
+func NewRouter(client *resty.Client) *Router {
+	return &Router{client: client}
 }
 
-func (h *Handler) SendMetrics(config configs.Config, body []byte) {
+func (h *Router) SendMetrics(config configs.Config, body []byte) {
 	_, _ = h.client.R().
 		SetBody(body).
 		SetHeader("Content-Encoding", "gzip").

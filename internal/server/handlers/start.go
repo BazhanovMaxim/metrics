@@ -4,18 +4,18 @@ import (
 	"github.com/BazhanovMaxim/metrics/internal/server/compress"
 	"github.com/BazhanovMaxim/metrics/internal/server/configs"
 	"github.com/BazhanovMaxim/metrics/internal/server/logger"
-	"github.com/BazhanovMaxim/metrics/internal/server/storage"
+	"github.com/BazhanovMaxim/metrics/internal/server/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type Handler struct {
-	storage storage.MetricStorage
 	config  configs.Config
+	service service.MetricService
 }
 
-func NewHandler(config configs.Config, storage storage.MetricStorage) *Handler {
-	return &Handler{config: config, storage: storage}
+func NewHandler(config configs.Config, service service.MetricService) *Handler {
+	return &Handler{config: config, service: service}
 }
 
 func (h *Handler) Start() error {
@@ -28,8 +28,8 @@ func (h *Handler) Start() error {
 	router.Use(
 		compress.GzipCompress(),
 		compress.GzipDecompress(),
-		logger.RequestLoggerMiddleware(),
-		logger.ResponseLoggerMiddleware(),
+		logger.RequestLogger(),
+		logger.ResponseLogger(),
 	)
 
 	router.GET("/", h.homePage)

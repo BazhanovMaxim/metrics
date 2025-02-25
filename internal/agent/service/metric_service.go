@@ -1,12 +1,13 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/BazhanovMaxim/metrics/internal/agent/compress"
 	"github.com/BazhanovMaxim/metrics/internal/agent/configs"
-	"github.com/BazhanovMaxim/metrics/internal/agent/handlers"
 	"github.com/BazhanovMaxim/metrics/internal/agent/logger"
 	"github.com/BazhanovMaxim/metrics/internal/agent/model"
+	"github.com/BazhanovMaxim/metrics/internal/agent/router"
 	"github.com/BazhanovMaxim/metrics/internal/agent/storage"
 	"go.uber.org/zap"
 	"time"
@@ -14,15 +15,15 @@ import (
 
 type MetricService struct {
 	config   configs.Config
-	handlers handlers.Handler
+	handlers router.Router
 	storage  storage.MetricStorage
 }
 
-func NewMetricService(config configs.Config, storage storage.MetricStorage, handlers handlers.Handler) *MetricService {
+func NewMetricService(config configs.Config, storage storage.MetricStorage, handlers router.Router) *MetricService {
 	return &MetricService{config: config, handlers: handlers, storage: storage}
 }
 
-func (ms *MetricService) Start() {
+func (ms *MetricService) Start(ctx context.Context) {
 	pollTicker := time.NewTicker(time.Duration(ms.config.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(ms.config.ReportInterval) * time.Second)
 	defer pollTicker.Stop()
@@ -30,6 +31,9 @@ func (ms *MetricService) Start() {
 
 	for {
 		select {
+		// Выходим из метода по завершению работы контекста
+		case <-ctx.Done():
+			return
 		case <-pollTicker.C:
 			ms.UpdateMetric()
 		case <-reportTicker.C:

@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"github.com/BazhanovMaxim/metrics/internal/server/configs"
+	"github.com/BazhanovMaxim/metrics/internal/server/service"
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -34,30 +35,6 @@ func TestHandler_UpdateHandler(t *testing.T) {
 			want:       want{code: http.StatusOK},
 		},
 		{
-			name:       "Negative method not allowed (GET)",
-			target:     "/update/unknown/temperature/10",
-			httpMethod: http.MethodGet,
-			want:       want{code: http.StatusMethodNotAllowed},
-		},
-		{
-			name:       "Negative method not allowed (PUT)",
-			target:     "/update/unknown/temperature/10",
-			httpMethod: http.MethodPut,
-			want:       want{code: http.StatusMethodNotAllowed},
-		},
-		{
-			name:       "Negative method not allowed (DELETE)",
-			target:     "/update/unknown/temperature/10",
-			httpMethod: http.MethodDelete,
-			want:       want{code: http.StatusMethodNotAllowed},
-		},
-		{
-			name:       "Negative method not allowed (HEAD)",
-			target:     "/update/unknown/temperature/10",
-			httpMethod: http.MethodHead,
-			want:       want{code: http.StatusMethodNotAllowed},
-		},
-		{
 			name:       "Negative not found metric type",
 			target:     "/update/unknown/temperature/10",
 			httpMethod: http.MethodPost,
@@ -71,10 +48,11 @@ func TestHandler_UpdateHandler(t *testing.T) {
 		},
 	}
 	config, _ := configs.NewConfig()
+	ms := service.NewMetricService(config, storage.NewMemStorage(), nil)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()
-			router.Handle(test.httpMethod, "/update/:metricType/:metricTitle/:metricValue", NewHandler(config, *storage.NewMetricRepository()).updateMetric)
+			router.Handle(test.httpMethod, "/update/:metricType/:metricTitle/:metricValue", NewHandler(config, *ms).updateMetric)
 
 			request := httptest.NewRequest(test.httpMethod, test.target, nil)
 			recorder := httptest.NewRecorder()
@@ -112,34 +90,6 @@ func TestHandler_UpdateJsonHandler(t *testing.T) {
 			want:       want{code: http.StatusOK},
 		},
 		{
-			name:       "Negative method not allowed (GET)",
-			target:     "/update",
-			httpMethod: http.MethodGet,
-			body:       []byte("{\"id\": \"temperature\", \"type\": \"counter\", \"delta\": 10}"),
-			want:       want{code: http.StatusMethodNotAllowed},
-		},
-		{
-			name:       "Negative method not allowed (PUT)",
-			target:     "/update",
-			httpMethod: http.MethodPut,
-			body:       []byte("{\"id\": \"temperature\", \"type\": \"counter\", \"delta\": 10}"),
-			want:       want{code: http.StatusMethodNotAllowed},
-		},
-		{
-			name:       "Negative method not allowed (DELETE)",
-			target:     "/update",
-			httpMethod: http.MethodDelete,
-			body:       []byte("{\"id\": \"temperature\", \"type\": \"counter\", \"delta\": 10}"),
-			want:       want{code: http.StatusMethodNotAllowed},
-		},
-		{
-			name:       "Negative method not allowed (HEAD)",
-			target:     "/update",
-			httpMethod: http.MethodHead,
-			body:       []byte("{\"id\": \"temperature\", \"type\": \"counter\", \"delta\": 10}"),
-			want:       want{code: http.StatusMethodNotAllowed},
-		},
-		{
 			name:       "Negative not found metric type",
 			target:     "/update",
 			httpMethod: http.MethodPost,
@@ -151,14 +101,15 @@ func TestHandler_UpdateJsonHandler(t *testing.T) {
 			target:     "/update",
 			httpMethod: http.MethodPost,
 			body:       []byte("{\"id\": \"temperature\", \"type\": \"counter\"}"),
-			want:       want{code: http.StatusNotFound},
+			want:       want{code: http.StatusBadRequest},
 		},
 	}
 	config, _ := configs.NewConfig()
+	ms := service.NewMetricService(config, storage.NewMemStorage(), nil)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()
-			router.Handle(test.httpMethod, "/update", NewHandler(config, *storage.NewMetricRepository()).updateMetricFromJSON)
+			router.Handle(test.httpMethod, "/update", NewHandler(config, *ms).updateMetricFromJSON)
 
 			request := httptest.NewRequest(test.httpMethod, test.target, bytes.NewReader(test.body))
 			recorder := httptest.NewRecorder()

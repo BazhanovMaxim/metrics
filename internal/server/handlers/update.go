@@ -1,18 +1,13 @@
 package handlers
 
 import (
+	"github.com/BazhanovMaxim/metrics/internal/server/json"
 	"github.com/BazhanovMaxim/metrics/internal/server/model"
-	"github.com/BazhanovMaxim/metrics/internal/server/service"
-	"github.com/BazhanovMaxim/metrics/internal/server/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 func (h *Handler) updateMetric(context *gin.Context) {
-	if context.Request.Method != http.MethodPost {
-		context.Status(http.StatusMethodNotAllowed)
-		return
-	}
 	metricType := context.Param("metricType")
 	metricTitle := context.Param("metricTitle")
 	metricValue := context.Param("metricValue")
@@ -21,49 +16,40 @@ func (h *Handler) updateMetric(context *gin.Context) {
 }
 
 func (h *Handler) updateMetricFromJSON(context *gin.Context) {
-	if context.Request.Method != http.MethodPost {
-		context.Status(http.StatusMethodNotAllowed)
-		return
-	}
 	modelMetrics := model.Metrics{}
-	if err := utils.MarshalRequest(context, &modelMetrics); err != nil {
+	if err := json.MarshalJSON(context.Request.Body, &modelMetrics); err != nil {
 		context.Status(http.StatusBadRequest)
-		return
-	}
-	if modelMetrics.Delta == nil && modelMetrics.Value == nil {
-		context.Status(http.StatusNotFound)
 		return
 	}
 	context.Header("Content-Type", "application/json")
 	if modelMetrics.MType == string(model.Counter) {
-		var delta int64
 		if modelMetrics.Delta == nil {
-			delta = 0
-		} else {
-			delta = *modelMetrics.Delta
+			context.Status(http.StatusBadRequest)
+			return
 		}
-		response, code := h.update(modelMetrics.ID, modelMetrics.MType, delta)
+		response, code := h.update(modelMetrics.ID, modelMetrics.MType, *modelMetrics.Delta)
 		context.JSON(code, response)
 		return
 	}
-	var value float64
 	if modelMetrics.Value == nil {
-		value = 0.0
-	} else {
-		value = *modelMetrics.Value
+		context.Status(http.StatusBadRequest)
+		return
 	}
-	response, code := h.update(modelMetrics.ID, modelMetrics.MType, value)
+	response, code := h.update(modelMetrics.ID, modelMetrics.MType, *modelMetrics.Value)
 	context.JSON(code, response)
 }
 
 func (h *Handler) update(id, metricType string, value interface{}) (*model.Metrics, int) {
-	metric := service.NewMetricService().FindService(metricType)
+	metric := h.service.FindService(metricType)
 	if metric == nil {
 		return nil, http.StatusBadRequest
 	}
-	updatedMetric := metric(id, value, h.storage)
+	updatedMetric := metric(id, value)
 	if updatedMetric == nil {
 		return nil, http.StatusBadRequest
+	}
+	if h.config.StoreInterval == 0 {
+		h.service.SaveMetricToStorage(updatedMetric)
 	}
 	return updatedMetric, http.StatusOK
 }

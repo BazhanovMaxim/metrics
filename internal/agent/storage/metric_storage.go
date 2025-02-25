@@ -6,11 +6,6 @@ import (
 	"runtime"
 )
 
-type IMetricStorage interface {
-	GetMetrics() map[string]model.Metric
-	Update()
-}
-
 type MetricStorage struct {
 	storage map[string]model.Metric
 }

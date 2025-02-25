@@ -2,17 +2,16 @@ package handlers
 
 import (
 	"github.com/BazhanovMaxim/metrics/internal/server/model"
-	"github.com/BazhanovMaxim/metrics/internal/server/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 func (h *Handler) homePage(context *gin.Context) {
 	var items []model.IndexHTMLModel
-	for key, value := range service.NewMetricService().GetCounters(h.storage) {
+	for key, value := range h.service.GetCounters() {
 		items = append(items, model.IndexHTMLModel{Key: key, Value: value})
 	}
-	for key, value := range service.NewMetricService().GetGauges(h.storage) {
+	for key, value := range h.service.GetGauges() {
 		items = append(items, model.IndexHTMLModel{Key: key, Value: value})
 	}
 	data := gin.H{"Metrics": items}

@@ -44,9 +44,8 @@ func (w *ResponseWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
-func RequestLoggerMiddleware() gin.HandlerFunc {
+func RequestLogger() gin.HandlerFunc {
 	return func(context *gin.Context) {
-		// точка, где выполняется хендлер
 		start := time.Now()
 
 		// Сохраняем тело запроса
@@ -72,7 +71,7 @@ func RequestLoggerMiddleware() gin.HandlerFunc {
 	}
 }
 
-func ResponseLoggerMiddleware() gin.HandlerFunc {
+func ResponseLogger() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		context.Next()
 
