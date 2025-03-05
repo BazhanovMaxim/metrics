@@ -48,7 +48,7 @@ func TestHandler_GetMetric(t *testing.T) {
 	memStorage.UpdateCounter("test", 10)
 
 	config, _ := configs.NewConfig()
-	ms := service.NewMetricService(config, memStorage, nil)
+	ms := service.NewMetricService(config, memStorage, nil, nil)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -107,7 +107,7 @@ func TestHandler_GetMetricFromJson(t *testing.T) {
 	ms.UpdateGauge("test", 10)
 	ms.UpdateCounter("test", 10)
 	config, _ := configs.NewConfig()
-	serv := service.NewMetricService(config, ms, nil)
+	serv := service.NewMetricService(config, ms, nil, nil)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()

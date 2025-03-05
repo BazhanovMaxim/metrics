@@ -12,6 +12,7 @@ type OsConfig struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	FileName        string `env:"FILE_NAME"`
 	Restore         bool   `env:"RESTORE"`
+	DatabaseDSN     string `env:"DATABASE_DSN"`
 }
 
 type Config struct {
@@ -25,6 +26,8 @@ type Config struct {
 	FileStorageName string
 	// Загружать или нет ранее сохранённые значения из указанного файла при старте сервера
 	Restore bool
+	// Строка с адресом подключения к БД
+	DatabaseDSN string
 }
 
 func NewConfig() (Config, error) {
@@ -45,6 +48,7 @@ func parseServerFlags(config *Config) {
 	flagSet.StringVar(&config.FileStoragePath, "f", "internal/server/tmp/test.json", "file storage path")
 	flagSet.StringVar(&config.FileStorageName, "n", "/test.json", "file name")
 	flagSet.BoolVar(&config.Restore, "r", false, "load saved metric value when the server starts")
+	flagSet.StringVar(&config.DatabaseDSN, "d", "", "database URL connection")
 	flagSet.Parse(os.Args[1:])
 }
 
@@ -67,6 +71,9 @@ func parseOsEnv(config *Config) error {
 	}
 	if cfg.FileName != "" {
 		config.FileStorageName = cfg.FileName
+	}
+	if cfg.DatabaseDSN != "" {
+		config.DatabaseDSN = cfg.DatabaseDSN
 	}
 	return nil
 }

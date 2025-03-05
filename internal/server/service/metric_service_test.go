@@ -22,7 +22,7 @@ func TestMetricService_FindService(t *testing.T) {
 	config, _ := configs.NewConfig()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			service := NewMetricService(config, nil, nil).FindService(test.metricType)
+			service := NewMetricService(config, nil, nil, nil).FindService(test.metricType)
 			if test.expectedOk {
 				assert.NotNil(t, service)
 				return
@@ -47,7 +47,7 @@ func TestMetricService_GetMetricValue(t *testing.T) {
 	memStorage := storage.NewMemStorage()
 	memStorage.UpdateGauge("gauge", 10)
 	memStorage.UpdateCounter("counter", 10)
-	metricService := NewMetricService(config, memStorage, nil)
+	metricService := NewMetricService(config, memStorage, nil, nil)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			service := metricService.GetMetricValue(test.metricType, test.metricType)
@@ -76,7 +76,7 @@ func TestMetricService_GetCountersGauges(t *testing.T) {
 	memStorage := storage.NewMemStorage()
 	memStorage.UpdateGauge("gauge", 10)
 	memStorage.UpdateCounter("counter", 10)
-	metricService := NewMetricService(config, memStorage, nil)
+	metricService := NewMetricService(config, memStorage, nil, nil)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

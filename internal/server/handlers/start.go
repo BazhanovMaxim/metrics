@@ -33,6 +33,7 @@ func (h *Handler) Start() error {
 	)
 
 	router.GET("/", h.homePage)
+	router.GET("/ping", h.ping)
 	router.GET("/value/:metricType/:metricTitle", h.getMetric)
 	router.POST("/value", h.getMetricFromJSON)
 	router.POST("/update/:metricType/:metricTitle/:metricValue", h.updateMetric)

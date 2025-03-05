@@ -49,7 +49,7 @@ func TestHandler_HomePageHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()
 			router.LoadHTMLGlob("../templates/*")
-			router.Handle(test.method, test.relativePath, NewHandler(config, *service.NewMetricService(config, storage.NewMemStorage(), nil)).homePage)
+			router.Handle(test.method, test.relativePath, NewHandler(config, *service.NewMetricService(config, storage.NewMemStorage(), nil, nil)).homePage)
 
 			request := httptest.NewRequest(test.method, test.targetPath, nil)
 			recorder := httptest.NewRecorder()

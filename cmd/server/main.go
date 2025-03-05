@@ -22,8 +22,9 @@ func main() {
 
 	memStorage := storage.NewMemStorage()
 	fileStorage := storage.NewFileStorage(config.FileStoragePath + config.FileStorageName)
-	//dbStorage := *storage.NewDBStorage()
-	metricService := *service.NewMetricService(config, memStorage, fileStorage)
+	dbStorage := storage.NewDBStorage(config.DatabaseDSN)
+	metricService := *service.NewMetricService(config, memStorage, fileStorage, dbStorage)
+
 	if config.Restore {
 		metricService.LoadStorageMetrics()
 	}

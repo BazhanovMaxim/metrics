@@ -10,17 +10,23 @@ import (
 	"strconv"
 )
 
+// MetricService
+// todo: подумать, можно ли упростить передачу параметров
+// из вариантов, разделить MetricService на fileMetricService, memMetricService.
+// При таком подходе общение между сервисами усложняется, но сервис не будет заботится, что за тип сторадж в нем лежит
 type MetricService struct {
 	config      configs.Config
 	memStorage  storage.IMemStorage
 	fileStorage storage.IFileStorage
+	dbStorage   storage.IDbStorage
 }
 
-func NewMetricService(config configs.Config, memStorage storage.IMemStorage, fileStorage storage.IFileStorage) *MetricService {
+func NewMetricService(config configs.Config, memStorage storage.IMemStorage, fileStorage storage.IFileStorage, dbStorage storage.IDbStorage) *MetricService {
 	return &MetricService{
 		config:      config,
 		memStorage:  memStorage,
 		fileStorage: fileStorage,
+		dbStorage:   dbStorage,
 	}
 }
 
@@ -164,4 +170,8 @@ func (ms *MetricService) SaveMetricToStorage(metric *model.Metrics) {
 	}
 
 	ms.fileStorage.WriteFile(newData)
+}
+
+func (ms *MetricService) PingConnection() error {
+	return ms.dbStorage.Ping()
 }

@@ -48,7 +48,7 @@ func TestHandler_UpdateHandler(t *testing.T) {
 		},
 	}
 	config, _ := configs.NewConfig()
-	ms := service.NewMetricService(config, storage.NewMemStorage(), nil)
+	ms := service.NewMetricService(config, storage.NewMemStorage(), nil, nil)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()
@@ -105,7 +105,7 @@ func TestHandler_UpdateJsonHandler(t *testing.T) {
 		},
 	}
 	config, _ := configs.NewConfig()
-	ms := service.NewMetricService(config, storage.NewMemStorage(), nil)
+	ms := service.NewMetricService(config, storage.NewMemStorage(), nil, nil)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			router := gin.Default()
