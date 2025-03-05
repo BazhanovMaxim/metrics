@@ -5,13 +5,34 @@ import (
 	"github.com/BazhanovMaxim/metrics/internal/server/model"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 func (h *Handler) updateMetric(context *gin.Context) {
 	metricType := context.Param("metricType")
 	metricTitle := context.Param("metricTitle")
 	metricValue := context.Param("metricValue")
-	_, code := h.update(metricTitle, metricType, metricValue)
+	metric := model.Metrics{ID: metricTitle, MType: metricType}
+	switch metricType {
+	case string(model.Counter):
+		val, err := strconv.ParseInt(metricValue, 10, 64)
+		if err != nil {
+			context.Status(http.StatusBadRequest)
+			return
+		}
+		metric.Delta = &val
+	case string(model.Gauge):
+		val, err := strconv.ParseFloat(metricValue, 64)
+		if err != nil {
+			context.Status(http.StatusBadRequest)
+			return
+		}
+		metric.Value = &val
+	default:
+		context.Status(http.StatusBadRequest)
+		return
+	}
+	_, code := h.update(metric)
 	context.Status(code)
 }
 
@@ -27,7 +48,11 @@ func (h *Handler) updateMetricFromJSON(context *gin.Context) {
 			context.Status(http.StatusBadRequest)
 			return
 		}
-		response, code := h.update(modelMetrics.ID, modelMetrics.MType, *modelMetrics.Delta)
+		response, code := h.update(model.Metrics{
+			ID:    modelMetrics.ID,
+			MType: modelMetrics.MType,
+			Delta: modelMetrics.Delta,
+		})
 		context.JSON(code, response)
 		return
 	}
@@ -35,21 +60,18 @@ func (h *Handler) updateMetricFromJSON(context *gin.Context) {
 		context.Status(http.StatusBadRequest)
 		return
 	}
-	response, code := h.update(modelMetrics.ID, modelMetrics.MType, *modelMetrics.Value)
+	response, code := h.update(model.Metrics{
+		ID:    modelMetrics.ID,
+		MType: modelMetrics.MType,
+		Value: modelMetrics.Value,
+	})
 	context.JSON(code, response)
 }
 
-func (h *Handler) update(id, metricType string, value interface{}) (*model.Metrics, int) {
-	metric := h.service.FindService(metricType)
-	if metric == nil {
+func (h *Handler) update(m model.Metrics) (*model.Metrics, int) {
+	updatedMetric, err := h.service.UpdateMetric(m)
+	if err != nil {
 		return nil, http.StatusBadRequest
-	}
-	updatedMetric := metric(id, value)
-	if updatedMetric == nil {
-		return nil, http.StatusBadRequest
-	}
-	if h.config.StoreInterval == 0 {
-		h.service.SaveMetricToStorage(updatedMetric)
 	}
 	return updatedMetric, http.StatusOK
 }

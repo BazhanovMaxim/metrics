@@ -8,10 +8,10 @@ type IndexHTMLModel struct {
 
 // Metrics updateMetric metrics model
 type Metrics struct {
-	ID    string   `json:"id"`              // Metric name
-	MType string   `json:"type"`            // Gauge or Counter
-	Delta *int64   `json:"delta,omitempty"` // Counter value
-	Value *float64 `json:"value,omitempty"` // Gauge value
+	ID    string   `db:"mid" json:"id"`                // Metric name
+	MType string   `db:"mtype" json:"type"`            // Gauge or Counter
+	Delta *int64   `db:"delta" json:"delta,omitempty"` // Counter value
+	Value *float64 `db:"value" json:"value,omitempty"` // Gauge value
 }
 
 // StorageJSONMetrics struct for save metrics to file

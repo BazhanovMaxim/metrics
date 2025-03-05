@@ -6,7 +6,7 @@ import (
 )
 
 func (h *Handler) ping(context *gin.Context) {
-	if err := h.service.PingConnection(); err != nil {
+	if err := h.service.CheckDatabaseConnection(); err != nil {
 		context.Status(http.StatusInternalServerError)
 		return
 	}

@@ -8,11 +8,14 @@ import (
 
 func (h *Handler) homePage(context *gin.Context) {
 	var items []model.IndexHTMLModel
-	for key, value := range h.service.GetCounters() {
-		items = append(items, model.IndexHTMLModel{Key: key, Value: value})
-	}
-	for key, value := range h.service.GetGauges() {
-		items = append(items, model.IndexHTMLModel{Key: key, Value: value})
+	for _, metric := range h.service.GetMetrics() {
+		var val interface{}
+		if metric.MType == string(model.Counter) {
+			val = metric.Delta
+		} else {
+			val = metric.Value
+		}
+		items = append(items, model.IndexHTMLModel{Key: metric.ID, Value: val})
 	}
 	data := gin.H{"Metrics": items}
 	context.HTML(http.StatusOK, "index.html", data)

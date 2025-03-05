@@ -45,7 +45,7 @@ func parseServerFlags(config *Config) {
 	flagSet := flag.NewFlagSet("serverFlags", flag.ContinueOnError)
 	flagSet.StringVar(&config.RunAddress, "a", ":8080", "address and port to run server")
 	flagSet.Int64Var(&config.StoreInterval, "i", 300, "store interval")
-	flagSet.StringVar(&config.FileStoragePath, "f", "internal/server/tmp/test.json", "file storage path")
+	flagSet.StringVar(&config.FileStoragePath, "f", "", "file storage path")
 	flagSet.StringVar(&config.FileStorageName, "n", "/test.json", "file name")
 	flagSet.BoolVar(&config.Restore, "r", false, "load saved metric value when the server starts")
 	flagSet.StringVar(&config.DatabaseDSN, "d", "", "database URL connection")
