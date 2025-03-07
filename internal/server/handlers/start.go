@@ -38,6 +38,7 @@ func (h *Handler) Start() error {
 	router.POST("/value", h.getMetricFromJSON)
 	router.POST("/update/:metricType/:metricTitle/:metricValue", h.updateMetric)
 	router.POST("/update", h.updateMetricFromJSON)
+	router.POST("/updates", h.updates)
 
 	return http.ListenAndServe(h.config.RunAddress, router)
 }

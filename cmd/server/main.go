@@ -23,14 +23,12 @@ func main() {
 		panic(err)
 	}
 
-	logger.Log.Info("filePath: " + config.FileStoragePath + " " + "fileName: " + config.FileStorageName)
-
 	var wg sync.WaitGroup
 
 	// Создаем канал для получения сигналов
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	rep := loadStorage(config)
+	rep := newStorage(config)
 	closeApp(&wg, sigChan, rep)
 
 	metricService := *service.NewMetricService(config, rep)
@@ -57,15 +55,15 @@ func closeApp(wg *sync.WaitGroup, sigChan chan os.Signal, storage service.IMetri
 	}()
 }
 
-func loadStorage(config configs.Config) service.IMetricStorage {
+func newStorage(config configs.Config) service.IMetricStorage {
 	if config.DatabaseDSN != "" {
-		logger.Log.Info("The database source is being used")
+		logger.Log.Info("The database source is being used with url: " + config.DatabaseDSN)
 		return storage.NewDBStorage(config.DatabaseDSN)
 	}
 	if config.FileStoragePath != "" {
-		logger.Log.Info("The file source is being used")
-		logger.Log.Info(config.FileStoragePath + config.FileStorageName)
+		logger.Log.Info("The file source is being used with file path: " + config.FileStoragePath + config.FileStorageName)
 		return storage.NewFileStorage(config)
 	}
+	logger.Log.Info("The memory source is being used")
 	return storage.NewMemStorage()
 }

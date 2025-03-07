@@ -47,6 +47,7 @@ func (ms *MetricService) UpdateMetric() {
 }
 
 func (ms *MetricService) SendMetricsToServer() {
+	var metrics []model.Metrics
 	for id, metric := range ms.storage.GetMetrics() {
 		metricsPojo := model.Metrics{MType: string(metric.Type), ID: id}
 		switch v := metric.Value.(type) {
@@ -55,17 +56,17 @@ func (ms *MetricService) SendMetricsToServer() {
 		case int64:
 			metricsPojo.Delta = &v
 		}
-
-		marshPojo, marshErr := json.Marshal(metricsPojo)
-		if marshErr != nil {
-			logger.Log.Error("Failed to marshal POJO", zap.Error(marshErr))
-			return
-		}
-		buf, compressErr := compress.GzipCompress(marshPojo)
-		if compressErr != nil {
-			logger.Log.Error("Failed to compress data", zap.Error(compressErr))
-			return
-		}
-		ms.handlers.SendMetrics(ms.config, buf.Bytes())
+		metrics = append(metrics, metricsPojo)
 	}
+	marshPojo, marshErr := json.Marshal(metrics)
+	if marshErr != nil {
+		logger.Log.Error("Failed to marshal POJO", zap.Error(marshErr))
+		return
+	}
+	buf, compressErr := compress.GzipCompress(marshPojo)
+	if compressErr != nil {
+		logger.Log.Error("Failed to compress data", zap.Error(compressErr))
+		return
+	}
+	ms.handlers.SendMetrics(ms.config, buf.Bytes())
 }

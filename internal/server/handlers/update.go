@@ -32,7 +32,7 @@ func (h *Handler) updateMetric(context *gin.Context) {
 		context.Status(http.StatusBadRequest)
 		return
 	}
-	_, code := h.update(metric)
+	code, _ := h.update(metric)
 	context.Status(code)
 }
 
@@ -48,30 +48,37 @@ func (h *Handler) updateMetricFromJSON(context *gin.Context) {
 			context.Status(http.StatusBadRequest)
 			return
 		}
-		response, code := h.update(model.Metrics{
+		context.JSON(h.update(model.Metrics{
 			ID:    modelMetrics.ID,
 			MType: modelMetrics.MType,
 			Delta: modelMetrics.Delta,
-		})
-		context.JSON(code, response)
+		}))
 		return
 	}
 	if modelMetrics.Value == nil {
 		context.Status(http.StatusBadRequest)
 		return
 	}
-	response, code := h.update(model.Metrics{
-		ID:    modelMetrics.ID,
-		MType: modelMetrics.MType,
-		Value: modelMetrics.Value,
-	})
-	context.JSON(code, response)
+	context.JSON(h.update(model.Metrics{ID: modelMetrics.ID, MType: modelMetrics.MType, Value: modelMetrics.Value}))
 }
 
-func (h *Handler) update(m model.Metrics) (*model.Metrics, int) {
+func (h *Handler) updates(context *gin.Context) {
+	var modelMetrics []model.Metrics
+	if err := json.MarshalJSON(context.Request.Body, &modelMetrics); err != nil {
+		context.Status(http.StatusBadRequest)
+		return
+	}
+	if err := h.service.UpdateBatches(modelMetrics); err != nil {
+		context.Status(http.StatusBadRequest)
+		return
+	}
+	context.Status(http.StatusOK)
+}
+
+func (h *Handler) update(m model.Metrics) (int, *model.Metrics) {
 	updatedMetric, err := h.service.UpdateMetric(m)
 	if err != nil {
-		return nil, http.StatusBadRequest
+		return http.StatusBadRequest, nil
 	}
-	return updatedMetric, http.StatusOK
+	return http.StatusOK, updatedMetric
 }

@@ -31,6 +31,15 @@ func (m *MemStorage) Update(metric model.Metrics) (*model.Metrics, error) {
 	return &metric, nil
 }
 
+func (m *MemStorage) UpdateBatches(metrics []model.Metrics) error {
+	for _, metric := range metrics {
+		if _, err := m.Update(metric); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (m *MemStorage) GetAllMetrics() []model.Metrics {
 	var t []model.Metrics
 	if len(m.Counter) != 0 {

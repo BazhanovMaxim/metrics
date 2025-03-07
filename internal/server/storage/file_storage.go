@@ -28,6 +28,22 @@ func NewFileStorage(config configs.Config) service.IMetricStorage {
 	return fs
 }
 
+func (s *FileStorage) init() {
+	if err := s.loadFile(); err != nil {
+		return
+	}
+	logger.Log.Info("The file for saving metrics has been created successfully or already exists")
+
+	if s.config.Restore {
+		logger.Log.Info("Load file storage metrics to memory storage")
+		s.loadFileStorageMetricsToMem()
+	}
+
+	if s.config.StoreInterval != 0 {
+		go s.startPeriodicSave()
+	}
+}
+
 func (s *FileStorage) Update(metric model.Metrics) (*model.Metrics, error) {
 	updatedMetric, err := s.memStorage.Update(metric)
 	if err == nil {
@@ -36,6 +52,15 @@ func (s *FileStorage) Update(metric model.Metrics) (*model.Metrics, error) {
 		}
 	}
 	return updatedMetric, err
+}
+
+func (s *FileStorage) UpdateBatches(metrics []model.Metrics) error {
+	for _, metric := range metrics {
+		if _, err := s.Update(metric); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *FileStorage) updateFileStorageMetric(metric model.Metrics) {
@@ -83,7 +108,9 @@ func (s *FileStorage) Ping() error {
 }
 
 func (s *FileStorage) Close() error {
-	s.saveMemMetricsToFileMetrics()
+	for _, metric := range s.GetAllMetrics() {
+		s.updateFileStorageMetric(metric)
+	}
 	return nil
 }
 
@@ -111,22 +138,6 @@ func (s *FileStorage) readFile() (*model.StorageJSONMetrics, error) {
 		metrics.Counter = make(map[string]int64)
 	}
 	return &metrics, nil
-}
-
-func (s *FileStorage) init() {
-	if err := s.loadFile(); err != nil {
-		return
-	}
-	logger.Log.Info("The file for saving metrics has been created successfully or already exists")
-
-	if s.config.Restore {
-		logger.Log.Info("Load file storage metrics to memory storage")
-		s.loadFileStorageMetricsToMem()
-	}
-
-	if s.config.StoreInterval != 0 {
-		go s.startPeriodicSave()
-	}
 }
 
 func (s *FileStorage) loadFile() error {
@@ -166,15 +177,11 @@ func (s *FileStorage) startPeriodicSave() {
 		select {
 		case <-ticker.C:
 			logger.Log.Info("Save memory storage metrics to file storage")
-			s.saveMemMetricsToFileMetrics()
+			for _, metric := range s.GetAllMetrics() {
+				s.updateFileStorageMetric(metric)
+			}
 		case <-stopChan:
 			return
 		}
-	}
-}
-
-func (s *FileStorage) saveMemMetricsToFileMetrics() {
-	for _, metric := range s.GetAllMetrics() {
-		s.updateFileStorageMetric(metric)
 	}
 }

@@ -2,14 +2,13 @@ package service
 
 import (
 	"github.com/BazhanovMaxim/metrics/internal/server/configs"
-	"github.com/BazhanovMaxim/metrics/internal/server/logger"
 	"github.com/BazhanovMaxim/metrics/internal/server/model"
-	"go.uber.org/zap"
 )
 
 // IMetricStorage интерфейс для работы с репозиториями
 type IMetricStorage interface {
 	Update(metric model.Metrics) (*model.Metrics, error)
+	UpdateBatches(metrics []model.Metrics) error
 	GetAllMetrics() []model.Metrics
 	GetMetric(mType, title string) *model.Metrics
 	Ping() error
@@ -29,19 +28,16 @@ func (ms *MetricService) UpdateMetric(metric model.Metrics) (*model.Metrics, err
 	return ms.storage.Update(metric)
 }
 
+func (ms *MetricService) UpdateBatches(metrics []model.Metrics) error {
+	return ms.storage.UpdateBatches(metrics)
+}
+
 func (ms *MetricService) GetMetrics() []model.Metrics {
 	return ms.storage.GetAllMetrics()
 }
 
 func (ms *MetricService) GetMetricValue(metricType, metricTitle string) *model.Metrics {
 	return ms.storage.GetMetric(metricType, metricTitle)
-}
-
-func (ms *MetricService) SaveMetricToStorage(metric *model.Metrics) {
-	_, err := ms.storage.Update(*metric)
-	if err != nil {
-		logger.Log.Error("Error", zap.Error(err))
-	}
 }
 
 func (ms *MetricService) CheckDatabaseConnection() error {

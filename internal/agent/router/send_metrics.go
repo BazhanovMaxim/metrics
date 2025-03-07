@@ -19,5 +19,5 @@ func (h *Router) SendMetrics(config configs.Config, body []byte) {
 		SetBody(body).
 		SetHeader("Content-Encoding", "gzip").
 		SetHeader("Content-Type", "application/json").
-		Post(fmt.Sprintf("http://%s/update/", config.RunAddress))
+		Post(fmt.Sprintf("http://%s/updates/", config.RunAddress))
 }
