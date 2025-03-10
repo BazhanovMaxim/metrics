@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"github.com/BazhanovMaxim/metrics/internal/server/configs"
 	"github.com/BazhanovMaxim/metrics/internal/server/file"
 	"github.com/BazhanovMaxim/metrics/internal/server/json"
 	"github.com/BazhanovMaxim/metrics/internal/server/logger"
@@ -12,48 +11,60 @@ import (
 	"time"
 )
 
+// FileStorage представляет собой хранилище для работы с метриками в файле
 type FileStorage struct {
-	filePath   string
-	config     configs.Config
-	memStorage service.IMetricStorage
+	filePath      string                 // Путь до файла
+	storeInterval int64                  // Периодичность сохранения метрик в файл
+	restore       bool                   // Загружать или нет ранее сохранённые значения из указанного файла при старте сервера
+	memStorage    service.IMetricStorage // Локальное хранилище для сохранения временных метрик
 }
 
-func NewFileStorage(config configs.Config) service.IMetricStorage {
+// NewFileStorage создает и возвращает новый экземпляр FileStorage
+func NewFileStorage(filePath string, storeInterval int64, restore bool) service.IMetricStorage {
 	fs := &FileStorage{
-		filePath:   config.FileStoragePath + config.FileStorageName,
-		config:     config,
-		memStorage: NewMemStorage(),
+		filePath:      filePath,
+		storeInterval: storeInterval,
+		restore:       restore,
+		memStorage:    NewMemStorage(),
 	}
 	fs.init()
 	return fs
 }
 
+// init инициализирует контекст FileStorage
 func (s *FileStorage) init() {
 	if err := s.loadFile(); err != nil {
 		return
 	}
 	logger.Log.Info("The file for saving metrics has been created successfully or already exists")
 
-	if s.config.Restore {
+	// загружает метрики из файла, если свойство restore == true
+	if s.restore {
 		logger.Log.Info("Load file storage metrics to memory storage")
 		s.loadFileStorageMetricsToMem()
 	}
 
-	if s.config.StoreInterval != 0 {
+	// Периодически сохраняет метрики в файл, если значение не равно 0.
+	// Иначе с этой частотой будет произведена попытка сохранения метрик из локального хранилища в файловый
+	if s.storeInterval != 0 {
 		go s.startPeriodicSave()
 	}
 }
 
+// Update обновляет метрики в файловом хранилище. Если метрики были добавлены ранее,
+// значение этих метрик будут изменены, иначе будет добавлена новая запись метрики
 func (s *FileStorage) Update(metric model.Metrics) (*model.Metrics, error) {
 	updatedMetric, err := s.memStorage.Update(metric)
 	if err == nil {
-		if s.config.StoreInterval == 0 {
+		if s.storeInterval == 0 {
 			s.updateFileStorageMetric(*updatedMetric)
 		}
 	}
 	return updatedMetric, err
 }
 
+// UpdateBatches обновляет метрики в файловом хранилище. Если метрики были добавлены ранее,
+// значение этих метрик будут изменены, иначе будет добавлена новая запись метрики
 func (s *FileStorage) UpdateBatches(metrics []model.Metrics) error {
 	for _, metric := range metrics {
 		if _, err := s.Update(metric); err != nil {
@@ -63,6 +74,7 @@ func (s *FileStorage) UpdateBatches(metrics []model.Metrics) error {
 	return nil
 }
 
+// updateFileStorageMetric записывает в файловое хранилище метрики из локального хранилища
 func (s *FileStorage) updateFileStorageMetric(metric model.Metrics) {
 	metrics, err := s.readFile()
 	if err != nil {
@@ -95,10 +107,13 @@ func (s *FileStorage) updateFileStorageMetric(metric model.Metrics) {
 	}
 }
 
+// GetAllMetrics получает и возвращает все метрики из локального хранилища
 func (s *FileStorage) GetAllMetrics() []model.Metrics {
 	return s.memStorage.GetAllMetrics()
 }
 
+// GetMetric получает и возвращает метрику из локального хранилища.
+// В случае, если метрики нет, тогда возвращается nil
 func (s *FileStorage) GetMetric(mType, title string) *model.Metrics {
 	return s.memStorage.GetMetric(mType, title)
 }
@@ -107,6 +122,7 @@ func (s *FileStorage) Ping() error {
 	return nil
 }
 
+// Close загружает локальные метрики в файловое хранилище
 func (s *FileStorage) Close() error {
 	for _, metric := range s.GetAllMetrics() {
 		s.updateFileStorageMetric(metric)
@@ -114,6 +130,7 @@ func (s *FileStorage) Close() error {
 	return nil
 }
 
+// readFile считывает и возвращает метрики из файлового хранилища
 func (s *FileStorage) readFile() (*model.StorageJSONMetrics, error) {
 	data, err := file.ReadFile(s.filePath)
 	if err != nil {
@@ -140,6 +157,7 @@ func (s *FileStorage) readFile() (*model.StorageJSONMetrics, error) {
 	return &metrics, nil
 }
 
+// loadFile создает файловое хранилище
 func (s *FileStorage) loadFile() error {
 	if err := file.MkdirAll(s.filePath); err != nil {
 		logger.Log.Error("Failed to create metrics directories storage", zap.Error(err))
@@ -152,6 +170,7 @@ func (s *FileStorage) loadFile() error {
 	return nil
 }
 
+// loadFileStorageMetricsToMem загружает метрики из файлового хранилища в локальное
 func (s *FileStorage) loadFileStorageMetricsToMem() {
 	metrics, err := s.readFile()
 	if err != nil {
@@ -165,8 +184,9 @@ func (s *FileStorage) loadFileStorageMetricsToMem() {
 	}
 }
 
+// startPeriodicSave периодически сохраняет метрики в файловое хранилище
 func (s *FileStorage) startPeriodicSave() {
-	ticker := time.NewTicker(time.Duration(s.config.StoreInterval) * time.Second)
+	ticker := time.NewTicker(time.Duration(s.storeInterval) * time.Second)
 	defer ticker.Stop()
 
 	// Канал для остановки горутины

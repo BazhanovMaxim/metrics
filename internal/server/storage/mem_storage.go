@@ -5,11 +5,13 @@ import (
 	"github.com/BazhanovMaxim/metrics/internal/server/service"
 )
 
+// MemStorage представляет собой локальное хранилище для работы с метриками
 type MemStorage struct {
 	Counter map[string]int64
 	Gauge   map[string]float64
 }
 
+// NewMemStorage создает и возвращает новый экземпляр MemStorage
 func NewMemStorage() service.IMetricStorage {
 	return &MemStorage{
 		Counter: make(map[string]int64),
@@ -17,6 +19,8 @@ func NewMemStorage() service.IMetricStorage {
 	}
 }
 
+// Update обновляет метрики в локальном хранилище. Если метрики были добавлены ранее,
+// значение этих метрик будут изменены, иначе будет добавлена новая запись метрики
 func (m *MemStorage) Update(metric model.Metrics) (*model.Metrics, error) {
 	if metric.MType == string(model.Gauge) {
 		m.Gauge[metric.ID] = *metric.Value
@@ -31,6 +35,8 @@ func (m *MemStorage) Update(metric model.Metrics) (*model.Metrics, error) {
 	return &metric, nil
 }
 
+// UpdateBatches обновляет метрики в локальном хранилище. Если метрики были добавлены ранее,
+// значение этих метрик будут изменены, иначе будет добавлена новая запись метрики
 func (m *MemStorage) UpdateBatches(metrics []model.Metrics) error {
 	for _, metric := range metrics {
 		if _, err := m.Update(metric); err != nil {
@@ -40,6 +46,7 @@ func (m *MemStorage) UpdateBatches(metrics []model.Metrics) error {
 	return nil
 }
 
+// GetAllMetrics получает и возвращает все метрики из локального хранилища
 func (m *MemStorage) GetAllMetrics() []model.Metrics {
 	var t []model.Metrics
 	if len(m.Counter) != 0 {
@@ -55,6 +62,8 @@ func (m *MemStorage) GetAllMetrics() []model.Metrics {
 	return t
 }
 
+// GetMetric получает и возвращает метрику из локального хранилища.
+// В случае, если метрики нет, тогда возвращается nil
 func (m *MemStorage) GetMetric(mType, title string) *model.Metrics {
 	if mType == string(model.Counter) {
 		if val, find := m.Counter[title]; find {

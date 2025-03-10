@@ -28,6 +28,14 @@ type Config struct {
 	Restore bool
 	// Строка с адресом подключения к БД
 	DatabaseDSN string
+	// Максимальное количество открытых соединений
+	MaxOpenCons int
+	// Максимальное количество простаивающих соединений
+	MaxIdleCons int
+	// Максимальное время жизни соединения(минуты)
+	ConnMaxLifetime int
+	// Максимальное время простоя соединения
+	ConnMaxIdleTime int
 }
 
 func NewConfig() (Config, error) {
@@ -49,6 +57,10 @@ func parseServerFlags(config *Config) {
 	flagSet.StringVar(&config.FileStorageName, "n", "/test.json", "file name")
 	flagSet.BoolVar(&config.Restore, "r", false, "load saved metric value when the server starts")
 	flagSet.StringVar(&config.DatabaseDSN, "d", "", "database URL connection")
+	flagSet.IntVar(&config.MaxOpenCons, "q", 25, "maximum number of open db connections")
+	flagSet.IntVar(&config.MaxIdleCons, "w", 25, "maximum number of idle db connections")
+	flagSet.IntVar(&config.ConnMaxLifetime, "e", 60, "maximum db connection lifetime")
+	flagSet.IntVar(&config.ConnMaxIdleTime, "t", 30, "maximum db connection downtime")
 	flagSet.Parse(os.Args[1:])
 }
 

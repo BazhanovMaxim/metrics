@@ -18,8 +18,8 @@ func (metrics *MetricStorage) Update() {
 	metrics.storage = generateMetrics(metrics.storage["PollCount"].Value.(int64) + 1)
 }
 
-func NewMetricRepository() MetricStorage {
-	return MetricStorage{generateMetrics(1)}
+func NewMetricRepository() IMetricStorage {
+	return &MetricStorage{generateMetrics(1)}
 }
 
 func generateMetrics(pollCount int64) map[string]model.Metric {

@@ -42,6 +42,7 @@ func main() {
 	logger.Log.Info("Server has been stopped")
 }
 
+// closeApp закрывает программу и завершает все необходимые процессы
 func closeApp(wg *sync.WaitGroup, sigChan chan os.Signal, storage service.IMetricStorage) {
 	wg.Add(1)
 
@@ -55,14 +56,15 @@ func closeApp(wg *sync.WaitGroup, sigChan chan os.Signal, storage service.IMetri
 	}()
 }
 
+// newStorage определяет и возвращает с каким хранилищем далее сервер будет работать
 func newStorage(config configs.Config) service.IMetricStorage {
 	if config.DatabaseDSN != "" {
 		logger.Log.Info("The database source is being used with url: " + config.DatabaseDSN)
-		return storage.NewDBStorage(config.DatabaseDSN)
+		return storage.NewDBStorage(config)
 	}
 	if config.FileStoragePath != "" {
 		logger.Log.Info("The file source is being used with file path: " + config.FileStoragePath + config.FileStorageName)
-		return storage.NewFileStorage(config)
+		return storage.NewFileStorage(config.FileStoragePath+config.FileStorageName, config.StoreInterval, config.Restore)
 	}
 	logger.Log.Info("The memory source is being used")
 	return storage.NewMemStorage()

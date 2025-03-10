@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/BazhanovMaxim/metrics/internal/agent/compress"
 	"github.com/BazhanovMaxim/metrics/internal/agent/configs"
 	"github.com/BazhanovMaxim/metrics/internal/agent/logger"
@@ -10,16 +11,18 @@ import (
 	"github.com/BazhanovMaxim/metrics/internal/agent/router"
 	"github.com/BazhanovMaxim/metrics/internal/agent/storage"
 	"go.uber.org/zap"
+	"net"
+	"strings"
 	"time"
 )
 
 type MetricService struct {
 	config   configs.Config
 	handlers router.Router
-	storage  storage.MetricStorage
+	storage  storage.IMetricStorage
 }
 
-func NewMetricService(config configs.Config, storage storage.MetricStorage, handlers router.Router) *MetricService {
+func NewMetricService(config configs.Config, storage storage.IMetricStorage, handlers router.Router) *MetricService {
 	return &MetricService{config: config, handlers: handlers, storage: storage}
 }
 
@@ -68,5 +71,20 @@ func (ms *MetricService) SendMetricsToServer() {
 		logger.Log.Error("Failed to compress data", zap.Error(compressErr))
 		return
 	}
-	ms.handlers.SendMetrics(ms.config, buf.Bytes())
+	if err := ms.handlers.SendMetrics(ms.config, buf.Bytes()); err != nil {
+		var opErr *net.OpError
+		if errors.As(err, &opErr) && strings.Contains(err.Error(), "connect: connection refused") {
+			logger.Log.Info("The server is unavailable. Retry sending metrics to the server")
+			ticker := time.NewTicker(2 * time.Second)
+			for i := 0; i < 3; i++ {
+				<-ticker.C
+				if err = ms.handlers.SendMetrics(ms.config, buf.Bytes()); err == nil ||
+					(!errors.As(err, &opErr) && !strings.Contains(err.Error(), "connect: connection refused")) {
+					ticker.Stop()
+					return
+				}
+			}
+			ticker.Stop()
+		}
+	}
 }
