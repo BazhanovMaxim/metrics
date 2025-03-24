@@ -3,7 +3,7 @@ package storage
 import (
 	"github.com/BazhanovMaxim/metrics/internal/server/file"
 	"github.com/BazhanovMaxim/metrics/internal/server/json"
-	"github.com/BazhanovMaxim/metrics/internal/server/logger"
+	"github.com/BazhanovMaxim/metrics/internal/server/middleware"
 	"github.com/BazhanovMaxim/metrics/internal/server/model"
 	"github.com/BazhanovMaxim/metrics/internal/server/service"
 	"go.uber.org/zap"
@@ -36,11 +36,11 @@ func (s *FileStorage) init() {
 	if err := s.loadFile(); err != nil {
 		return
 	}
-	logger.Log.Info("The file for saving metrics has been created successfully or already exists")
+	middleware.Log.Info("The file for saving metrics has been created successfully or already exists")
 
 	// загружает метрики из файла, если свойство restore == true
 	if s.restore {
-		logger.Log.Info("Load file storage metrics to memory storage")
+		middleware.Log.Info("Load file storage metrics to memory storage")
 		s.loadFileStorageMetricsToMem()
 	}
 
@@ -90,20 +90,20 @@ func (s *FileStorage) updateFileStorageMetric(metric model.Metrics) {
 
 	newData, err := json.MarshalIndent(metrics, "", " ")
 	if err != nil {
-		logger.Log.Error("Failed to indent data", zap.Error(err))
+		middleware.Log.Error("Failed to indent data", zap.Error(err))
 		return
 	}
 
 	fl, err := file.OpenFile(s.filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC)
 	if err != nil {
-		logger.Log.Error("Failed to save metrics to file storage", zap.Error(err))
+		middleware.Log.Error("Failed to save metrics to file storage", zap.Error(err))
 		return
 	}
 	defer fl.Close()
 
 	writeError := file.WriteFile(fl, newData)
 	if writeError != nil {
-		logger.Log.Error("Failed write new data to storage file", zap.Error(err))
+		middleware.Log.Error("Failed write new data to storage file", zap.Error(err))
 	}
 }
 
@@ -134,7 +134,7 @@ func (s *FileStorage) Close() error {
 func (s *FileStorage) readFile() (*model.StorageJSONMetrics, error) {
 	data, err := file.ReadFile(s.filePath)
 	if err != nil {
-		logger.Log.Error("Failed to open metrics file storage", zap.Error(err))
+		middleware.Log.Error("Failed to open metrics file storage", zap.Error(err))
 		return nil, err
 	}
 
@@ -142,7 +142,7 @@ func (s *FileStorage) readFile() (*model.StorageJSONMetrics, error) {
 	// Проверка, является ли файл пустым
 	if len(data) != 0 {
 		if unmarshalError := json.UnmarshalJSON(data, &metrics); unmarshalError != nil {
-			logger.Log.Error("Failed to decode metrics file", zap.Error(unmarshalError))
+			middleware.Log.Error("Failed to decode metrics file", zap.Error(unmarshalError))
 			return nil, unmarshalError
 		}
 	}
@@ -160,11 +160,11 @@ func (s *FileStorage) readFile() (*model.StorageJSONMetrics, error) {
 // loadFile создает файловое хранилище
 func (s *FileStorage) loadFile() error {
 	if err := file.MkdirAll(s.filePath); err != nil {
-		logger.Log.Error("Failed to create metrics directories storage", zap.Error(err))
+		middleware.Log.Error("Failed to create metrics directories storage", zap.Error(err))
 		return err
 	}
 	if _, openFileErr := file.OpenFile(s.filePath, os.O_RDWR|os.O_CREATE); openFileErr != nil {
-		logger.Log.Error("Failed to create metrics file storage", zap.Error(openFileErr))
+		middleware.Log.Error("Failed to create metrics file storage", zap.Error(openFileErr))
 		return openFileErr
 	}
 	return nil
@@ -174,7 +174,7 @@ func (s *FileStorage) loadFile() error {
 func (s *FileStorage) loadFileStorageMetricsToMem() {
 	metrics, err := s.readFile()
 	if err != nil {
-		logger.Log.Error("Failed to read file storage", zap.Error(err))
+		middleware.Log.Error("Failed to read file storage", zap.Error(err))
 	}
 	for key, value := range metrics.Counter {
 		_, _ = s.memStorage.Update(model.Metrics{ID: key, MType: string(model.Counter), Delta: &value})
@@ -196,7 +196,7 @@ func (s *FileStorage) startPeriodicSave() {
 	for {
 		select {
 		case <-ticker.C:
-			logger.Log.Info("Save memory storage metrics to file storage")
+			middleware.Log.Info("Save memory storage metrics to file storage")
 			for _, metric := range s.GetAllMetrics() {
 				s.updateFileStorageMetric(metric)
 			}

@@ -13,6 +13,7 @@ type OsConfig struct {
 	FileName        string `env:"FILE_NAME"`
 	Restore         bool   `env:"RESTORE"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
+	SecretKey       string `env:"KEY"`
 }
 
 type Config struct {
@@ -36,6 +37,8 @@ type Config struct {
 	ConnMaxLifetime int
 	// Максимальное время простоя соединения
 	ConnMaxIdleTime int
+	// Секретный ключ
+	SecretKey string
 }
 
 func NewConfig() (Config, error) {
@@ -55,12 +58,13 @@ func parseServerFlags(config *Config) {
 	flagSet.Int64Var(&config.StoreInterval, "i", 300, "store interval")
 	flagSet.StringVar(&config.FileStoragePath, "f", "", "file storage path")
 	flagSet.StringVar(&config.FileStorageName, "n", "/test.json", "file name")
-	flagSet.BoolVar(&config.Restore, "r", false, "load saved metric value when the server starts")
+	flagSet.BoolVar(&config.Restore, "r", true, "load saved metric value when the server starts")
 	flagSet.StringVar(&config.DatabaseDSN, "d", "", "database URL connection")
 	flagSet.IntVar(&config.MaxOpenCons, "q", 25, "maximum number of open db connections")
 	flagSet.IntVar(&config.MaxIdleCons, "w", 25, "maximum number of idle db connections")
 	flagSet.IntVar(&config.ConnMaxLifetime, "e", 60, "maximum db connection lifetime")
 	flagSet.IntVar(&config.ConnMaxIdleTime, "t", 30, "maximum db connection downtime")
+	flagSet.StringVar(&config.SecretKey, "k", "", "secret key")
 	flagSet.Parse(os.Args[1:])
 }
 
@@ -86,6 +90,9 @@ func parseOsEnv(config *Config) error {
 	}
 	if cfg.DatabaseDSN != "" {
 		config.DatabaseDSN = cfg.DatabaseDSN
+	}
+	if cfg.SecretKey != "" {
+		config.SecretKey = cfg.SecretKey
 	}
 	return nil
 }

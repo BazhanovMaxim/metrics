@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/BazhanovMaxim/metrics/internal/agent/compress"
 	"github.com/BazhanovMaxim/metrics/internal/agent/configs"
 	"github.com/BazhanovMaxim/metrics/internal/agent/logger"
 	"github.com/BazhanovMaxim/metrics/internal/agent/model"
@@ -38,18 +37,18 @@ func (ms *MetricService) Start(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-pollTicker.C:
-			ms.UpdateMetric()
+			ms.updateMetric()
 		case <-reportTicker.C:
-			ms.SendMetricsToServer()
+			ms.sendMetricsToServer()
 		}
 	}
 }
 
-func (ms *MetricService) UpdateMetric() {
+func (ms *MetricService) updateMetric() {
 	ms.storage.Update()
 }
 
-func (ms *MetricService) SendMetricsToServer() {
+func (ms *MetricService) sendMetricsToServer() {
 	var metrics []model.Metrics
 	for id, metric := range ms.storage.GetMetrics() {
 		metricsPojo := model.Metrics{MType: string(metric.Type), ID: id}
@@ -61,26 +60,22 @@ func (ms *MetricService) SendMetricsToServer() {
 		}
 		metrics = append(metrics, metricsPojo)
 	}
-	marshPojo, marshErr := json.Marshal(metrics)
+	body, marshErr := json.Marshal(metrics)
 	if marshErr != nil {
 		logger.Log.Error("Failed to marshal POJO", zap.Error(marshErr))
 		return
 	}
-	buf, compressErr := compress.GzipCompress(marshPojo)
-	if compressErr != nil {
-		logger.Log.Error("Failed to compress data", zap.Error(compressErr))
-		return
-	}
-	if err := ms.handlers.SendMetrics(ms.config, buf.Bytes()); err != nil {
+	if err := ms.handlers.SendMetrics(ms.config, body); err != nil {
 		var opErr *net.OpError
 		if errors.As(err, &opErr) && strings.Contains(err.Error(), "connect: connection refused") {
 			logger.Log.Info("The server is unavailable. Retry sending metrics to the server")
 			ticker := time.NewTicker(2 * time.Second)
 			for i := 0; i < 3; i++ {
 				<-ticker.C
-				if err = ms.handlers.SendMetrics(ms.config, buf.Bytes()); err == nil ||
+				if err = ms.handlers.SendMetrics(ms.config, body); err == nil ||
 					(!errors.As(err, &opErr) && !strings.Contains(err.Error(), "connect: connection refused")) {
 					ticker.Stop()
+					logger.Log.Error("Failed to send message to server", zap.Error(err))
 					return
 				}
 			}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/BazhanovMaxim/metrics/internal/server/configs"
-	"github.com/BazhanovMaxim/metrics/internal/server/logger"
+	"github.com/BazhanovMaxim/metrics/internal/server/middleware"
 	"github.com/BazhanovMaxim/metrics/internal/server/model"
 	"github.com/BazhanovMaxim/metrics/internal/server/queries"
 	"github.com/BazhanovMaxim/metrics/internal/server/service"
@@ -32,7 +32,7 @@ func (s *DBStorage) init() {
 	// открываем пул соединений и сразу проверяем работоспособность подключения
 	db, err := sqlx.Connect("pgx", s.config.DatabaseDSN)
 	if err != nil {
-		logger.Log.Info("Database connection error. Retry to reconnect to database")
+		middleware.Log.Info("Database connection error. Retry to reconnect to database")
 		// выполняет попытку переподключения к базе данных
 		ticker := time.NewTicker(2 * time.Second)
 		for i := 0; i < 3; i++ {
@@ -44,7 +44,7 @@ func (s *DBStorage) init() {
 			}
 		}
 		ticker.Stop()
-		logger.Log.Error("Database connection error")
+		middleware.Log.Error("Database connection error")
 		return
 	}
 	s.db = db
@@ -54,18 +54,13 @@ func (s *DBStorage) init() {
 	s.db.SetConnMaxLifetime(time.Duration(s.config.ConnMaxLifetime) * time.Minute) // Максимальное время жизни соединения
 	s.db.SetConnMaxIdleTime(time.Duration(s.config.ConnMaxIdleTime) * time.Minute) // Максимальное время простоя соединения
 	s.createMetricsTable()
-	logger.Log.Info("Success database connection")
+	middleware.Log.Info("Success database connection")
 }
 
 // Update обновляет метрики в базе данных. Если метрики были добавлены ранее,
 // значение этих метрик будут изменены, иначе будет добавлена новая запись метрики
 func (s *DBStorage) Update(metric model.Metrics) (*model.Metrics, error) {
-	_, err := s.db.Exec(queries.InsertMetric, metric.ID, metric.MType, metric.Delta, metric.Value)
-	if err != nil {
-		logger.Log.Error("Failed to update metric", zap.Error(err))
-		return nil, err
-	}
-	return &metric, err
+	return &metric, s.UpdateBatches([]model.Metrics{metric})
 }
 
 // UpdateBatches выполняет транзакцию для множественной вставки метрик в базе данных. Если метрики были добавлены ранее,
@@ -73,13 +68,13 @@ func (s *DBStorage) Update(metric model.Metrics) (*model.Metrics, error) {
 func (s *DBStorage) UpdateBatches(metrics []model.Metrics) error {
 	tx, err := s.db.BeginTx(context.Background(), nil)
 	if err != nil {
-		logger.Log.Error("Failed to create transaction", zap.Error(err))
+		middleware.Log.Error("Failed to create transaction", zap.Error(err))
 		return err
 	}
 	for _, metric := range metrics {
 		_, insErr := tx.Exec(queries.InsertMetric, metric.ID, metric.MType, metric.Delta, metric.Value)
 		if insErr != nil {
-			logger.Log.Error("Failed to update batches", zap.Error(insErr))
+			middleware.Log.Error("Failed to update batches", zap.Error(insErr))
 			_ = tx.Rollback()
 			return insErr
 		}
@@ -91,7 +86,7 @@ func (s *DBStorage) UpdateBatches(metrics []model.Metrics) error {
 func (s *DBStorage) GetAllMetrics() []model.Metrics {
 	var metric []model.Metrics
 	if err := s.db.Select(&metric, queries.GetMetrics); err != nil {
-		logger.Log.Error("Failed get all metrics by database", zap.Error(err))
+		middleware.Log.Error("Failed get all metrics by database", zap.Error(err))
 		return nil
 	}
 	return metric
@@ -102,7 +97,11 @@ func (s *DBStorage) GetAllMetrics() []model.Metrics {
 func (s *DBStorage) GetMetric(mType, title string) *model.Metrics {
 	var metric model.Metrics
 	if err := s.db.Get(&metric, queries.GetMetric, title, mType); err != nil {
-		logger.Log.Error("Failed get metric by database", zap.Error(err))
+		middleware.Log.Error("Failed get metric by database",
+			zap.String("title", title),
+			zap.String("mType", mType),
+			zap.Error(err),
+		)
 		return nil
 	}
 	return &metric
@@ -119,14 +118,14 @@ func (s *DBStorage) Close() error {
 // createMetricsTable создает таблицу для метрик в базе данных
 func (s *DBStorage) createMetricsTable() {
 	if _, err := s.db.Exec(queries.CreateMetricsTable); err != nil {
-		logger.Log.Error("Failed to create metrics table in database", zap.Error(err))
+		middleware.Log.Error("Failed to create metrics table in database", zap.Error(err))
 		return
 	}
 	if _, err := s.db.Exec(queries.CreateIndex); err != nil {
-		logger.Log.Error("Failed to create metrics index in database", zap.Error(err))
+		middleware.Log.Error("Failed to create metrics index in database", zap.Error(err))
 		return
 	}
-	logger.Log.Info("The metric tables were created successfully")
+	middleware.Log.Info("The metric tables were created successfully")
 }
 
 // Ping проверяет работоспособность подключения к базе данных

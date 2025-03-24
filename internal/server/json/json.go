@@ -6,6 +6,10 @@ import (
 	"io"
 )
 
+func MarshalToJSON(model any) ([]byte, error) {
+	return json.Marshal(model)
+}
+
 func MarshalJSON(reader io.Reader, model any) error {
 	var buf bytes.Buffer
 	if _, err := buf.ReadFrom(reader); err != nil {

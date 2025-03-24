@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/BazhanovMaxim/metrics/internal/server/configs"
 	"github.com/BazhanovMaxim/metrics/internal/server/handlers"
-	"github.com/BazhanovMaxim/metrics/internal/server/logger"
+	"github.com/BazhanovMaxim/metrics/internal/server/middleware"
 	"github.com/BazhanovMaxim/metrics/internal/server/service"
 	"github.com/BazhanovMaxim/metrics/internal/server/storage"
 	"go.uber.org/zap"
@@ -19,7 +19,7 @@ func main() {
 		panic(err)
 	}
 
-	if err = logger.NewLogger("info"); err != nil {
+	if err = middleware.NewLogger("info"); err != nil {
 		panic(err)
 	}
 
@@ -33,13 +33,13 @@ func main() {
 
 	metricService := *service.NewMetricService(config, rep)
 
-	logger.Log.Info("Running server", zap.String("address", config.RunAddress))
+	middleware.Log.Info("Running server", zap.String("address", config.RunAddress))
 	if handlerError := handlers.NewHandler(config, metricService).Start(); handlerError != nil {
 		zap.Error(handlerError)
 	}
 
 	wg.Wait()
-	logger.Log.Info("Server has been stopped")
+	middleware.Log.Info("Server has been stopped")
 }
 
 // closeApp закрывает программу и завершает все необходимые процессы
@@ -59,13 +59,13 @@ func closeApp(wg *sync.WaitGroup, sigChan chan os.Signal, storage service.IMetri
 // newStorage определяет и возвращает с каким хранилищем далее сервер будет работать
 func newStorage(config configs.Config) service.IMetricStorage {
 	if config.DatabaseDSN != "" {
-		logger.Log.Info("The database source is being used with url: " + config.DatabaseDSN)
+		middleware.Log.Info("The database source is being used with url: " + config.DatabaseDSN)
 		return storage.NewDBStorage(config)
 	}
 	if config.FileStoragePath != "" {
-		logger.Log.Info("The file source is being used with file path: " + config.FileStoragePath + config.FileStorageName)
+		middleware.Log.Info("The file source is being used with file path: " + config.FileStoragePath + config.FileStorageName)
 		return storage.NewFileStorage(config.FileStoragePath+config.FileStorageName, config.StoreInterval, config.Restore)
 	}
-	logger.Log.Info("The memory source is being used")
+	middleware.Log.Info("The memory source is being used")
 	return storage.NewMemStorage()
 }

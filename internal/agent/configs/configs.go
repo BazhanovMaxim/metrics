@@ -11,6 +11,7 @@ type Config struct {
 	ReportInterval   int
 	PollInterval     int
 	AgentWorkingTime int
+	SecretKey        string
 }
 
 type OsConfig struct {
@@ -18,6 +19,7 @@ type OsConfig struct {
 	Report    int    `env:"REPORT_INTERVAL"`
 	Poll      int    `env:"POLL_INTERVAL"`
 	AgentTime int    `env:"AGENT_WORKING_TIME"`
+	Key       string `env:"KEY"`
 }
 
 func NewConfig() (Config, error) {
@@ -37,6 +39,7 @@ func parseAgentFlags(config *Config) {
 	flagSet.IntVar(&config.ReportInterval, "r", 10, "report interval")
 	flagSet.IntVar(&config.PollInterval, "p", 2, "poll interval")
 	flagSet.IntVar(&config.AgentWorkingTime, "t", 600, "agent's working time")
+	flagSet.StringVar(&config.SecretKey, "k", "", "secret key")
 	flagSet.Parse(os.Args[1:])
 }
 
@@ -56,6 +59,9 @@ func parseOsEnv(config *Config) error {
 	}
 	if cfg.AgentTime != 0 {
 		config.AgentWorkingTime = cfg.AgentTime
+	}
+	if cfg.Key != "" {
+		config.SecretKey = cfg.Key
 	}
 	return nil
 }
