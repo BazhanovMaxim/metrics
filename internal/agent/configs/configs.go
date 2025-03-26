@@ -7,11 +7,12 @@ import (
 )
 
 type Config struct {
-	RunAddress       string
-	ReportInterval   int
-	PollInterval     int
-	AgentWorkingTime int
-	SecretKey        string
+	RunAddress       string // Адрес сервера, к которому необходимо делать запросы
+	ReportInterval   int    // Report interval
+	PollInterval     int    // Poll interval
+	AgentWorkingTime int    // Время работы агенты
+	SecretKey        string // Секретный ключ для шифрования данных
+	RateLimit        int    // Количество одновременно отправляемых запросов на сервер
 }
 
 type OsConfig struct {
@@ -20,6 +21,7 @@ type OsConfig struct {
 	Poll      int    `env:"POLL_INTERVAL"`
 	AgentTime int    `env:"AGENT_WORKING_TIME"`
 	Key       string `env:"KEY"`
+	RateLimit int    `env:"RATE_LIMIT"`
 }
 
 func NewConfig() (Config, error) {
@@ -40,6 +42,7 @@ func parseAgentFlags(config *Config) {
 	flagSet.IntVar(&config.PollInterval, "p", 2, "poll interval")
 	flagSet.IntVar(&config.AgentWorkingTime, "t", 600, "agent's working time")
 	flagSet.StringVar(&config.SecretKey, "k", "", "secret key")
+	flagSet.IntVar(&config.RateLimit, "l", 0, "rate limit")
 	flagSet.Parse(os.Args[1:])
 }
 
@@ -62,6 +65,9 @@ func parseOsEnv(config *Config) error {
 	}
 	if cfg.Key != "" {
 		config.SecretKey = cfg.Key
+	}
+	if cfg.RateLimit != 0 {
+		config.RateLimit = cfg.RateLimit
 	}
 	return nil
 }

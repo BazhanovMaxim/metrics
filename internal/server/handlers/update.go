@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"github.com/BazhanovMaxim/metrics/internal/agent/logger"
 	"github.com/BazhanovMaxim/metrics/internal/server/json"
 	"github.com/BazhanovMaxim/metrics/internal/server/model"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 )
@@ -65,10 +67,12 @@ func (h *Handler) updateMetricFromJSON(context *gin.Context) {
 func (h *Handler) updates(context *gin.Context) {
 	var modelMetrics []model.Metrics
 	if err := json.MarshalJSON(context.Request.Body, &modelMetrics); err != nil {
+		logger.Log.Error("Failed to marshalJSON", zap.Error(err))
 		context.Status(http.StatusBadRequest)
 		return
 	}
 	if err := h.service.UpdateBatches(modelMetrics); err != nil {
+		logger.Log.Error("Failed to update batches", zap.Error(err))
 		context.Status(http.StatusBadRequest)
 		return
 	}

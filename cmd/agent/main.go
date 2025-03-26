@@ -21,6 +21,7 @@ func main() {
 	config, configError := configs.NewConfig()
 	if configError != nil {
 		logger.Log.Error("Failed to build config client", zap.Error(configError))
+		return
 	}
 
 	logger.Log.Info("Running agent", zap.String("address", config.RunAddress))
@@ -32,8 +33,8 @@ func main() {
 	go func() {
 		service.NewMetricService(config, storage.NewMetricRepository(), *router.NewRouter(client)).Start(ctx)
 	}()
+
 	// Ждём завершения контекста
 	<-ctx.Done()
-
 	logger.Log.Info("The agent has completed the work")
 }

@@ -2,26 +2,56 @@ package storage
 
 import (
 	"github.com/BazhanovMaxim/metrics/internal/agent/model"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
 	"math/rand"
 	"runtime"
+	"sync"
 )
 
 type MetricStorage struct {
+	mutex   sync.Mutex
 	storage map[string]model.Metric
 }
 
+// NewMetricRepository создает и возвращает новый экземпляр IMetricStorage
+func NewMetricRepository() IMetricStorage {
+	return &MetricStorage{storage: generateMetrics(1)}
+}
+
+// GetMetrics возвращает собранные метрики
 func (metrics *MetricStorage) GetMetrics() map[string]model.Metric {
+	metrics.mutex.Lock()
+	defer metrics.mutex.Unlock()
 	return metrics.storage
 }
 
+// Update обновляет системные метрики
 func (metrics *MetricStorage) Update() {
+	metrics.mutex.Lock()
 	metrics.storage = generateMetrics(metrics.storage["PollCount"].Value.(int64) + 1)
+	metrics.mutex.Unlock()
 }
 
-func NewMetricRepository() IMetricStorage {
-	return &MetricStorage{generateMetrics(1)}
+// UpdateSys обновляет системные настройки памяти
+func (metrics *MetricStorage) UpdateSys() {
+	metrics.mutex.Lock()
+
+	mt := metrics.GetMetrics()
+	v, _ := mem.VirtualMemory()
+
+	// Get CPU utilization
+	cpuPercent, _ := cpu.Percent(0, false)
+	cpuUtilization1 := cpuPercent[0]
+
+	mt["TotalMemory"] = model.Metric{Value: v.Total, Type: model.Gauge}
+	mt["FreeMemory"] = model.Metric{Value: v.Free, Type: model.Gauge}
+	mt["CPUutilization1"] = model.Metric{Value: cpuUtilization1, Type: model.Gauge}
+
+	metrics.mutex.Unlock()
 }
 
+// generateMetrics генерирует системный метрики
 func generateMetrics(pollCount int64) map[string]model.Metric {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
